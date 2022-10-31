@@ -72,6 +72,9 @@
 \usepackage{amsfonts}
 \usepackage{url}      %% Hyperlinks
 \usepackage{markdown} %% Lightweight markup
+\usepackage{multicol}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
 \usepackage{listings} %% Source code highlighting
 \lstset{
   basicstyle      = \ttfamily,
@@ -86,6 +89,10 @@
 \usepackage{floatrow} %% Putting captions above tables
 \floatsetup[table]{capposition=top}
 \usepackage[babel]{csquotes} %% Context-sensitive quotation marks
+
+\let\oldlooseness=\looseness
+\newcommand{\macro}[1]{\texttt{\textbackslash{}{#1}}}
+
 \begin{document}
 %% Uncomment the following lines (by removing the %% at the beginning)
 %% and to print out List of Abbreviations and/or Glossary in your
@@ -103,12 +110,248 @@
 }
 Text goes here.
 \end{markdown*}
+
 \section{Pandoc}
+Program \emph{Pandoc}~\cite{pandoc} umožňuje konverziu medzi desiatkami značkovacích jazykov a~dokumentových formátov, ako sú dialekty Markdownu, formáty \TeX u (\LaTeX{} a~Con\TeX{}t), \textsc{html}, docx, nebo roff. Výstup konverzie je možné ovplyvniť pomocou \emph{filtrov}, čo sú používateľské programy, ktoré upravujú dokument počas konverzie. Pri konverzii do \TeX u má ale autor len obmedzené možnosti, ako ovplyvniť vzhľad výsledných dokumentov.
+
+Konverzia v~Pandocu prebieha v~dvoch fázach: konverziou vstupného formátu na natívnu reprezentáciu dokumentu a~následnou konverziou tejto reprezentácie na výstupný formát. Dokumentácia Pandocu túto natívnu reprezentáciu nazýva \emph{abstract syntax tree}, skrátene \textsc{ast} a~vskutku sa jedná o~strom prvkov Pandocu, ktorý sa uprosted konverzie celý nachádza v~operačnej pamäti (viď obr. \ref{fig:pandoc-ast}).
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[->, anchor=base, baseline, sibling distance=2.5cm]
+    \node (pdpara) {\texttt{Para}}
+      child { node (pdstrhello) {\texttt{Str "Hello"}} edge from parent[->, gray] }
+      child { node (pdspace) {\texttt{Space}} edge from parent[->, gray] }
+      child { node (pdemph) {\texttt{Emph}}
+        child { node (pdstrmd) {\texttt{Str "Markdown"}} edge from parent[->, gray] }
+      edge from parent[->, gray] }
+      child { node (exclamation) {\texttt{Str "!"}} edge from parent[->, gray]
+    };
+  \end{tikzpicture}
+  \caption{Pandoc \textsc{ast} pre vstup Markdownu ,,\texttt{Hello *Markdown*!}``}
+  \label{fig:pandoc-ast}
+\end{figure}
+
+Pri zadaní výstupného formátu \texttt{native} vráti Pandoc na výstup celý tento strom vo svojej internej reprezentácii jazyka \emph{Haskell}, v~ktorom je Pandoc napísaný. Alternatívne je možné zadaním výstupného formátu \texttt{json} získať ekvivalentnú reprezentáciu tohoto stromu vo formáte \textsc{json}. Keďže existujú rôzne knižnice v~jazyku Lua schopné parsovať formát \textsc{json},\footnote{Knižnica, ktorú naše rozšírenie využíva, je dostupná na \texttt{https://github.com/rxi/json.lua}.} je pre naše rozšírenie Markdownu táto reprezentácia vhodnejšia.
+
+% Prvky Pandocu prevzaté z dokumentácie: \textsf{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}
+
+\begin{figure}
+  \centering
+  \begin{multicols}{2}
+    \begin{enumerate}
+      \item \texttt{Plain}
+      \item \texttt{Para}
+      \item \texttt{LineBlock}
+      \item \texttt{CodeBlock}
+      \item \texttt{RawBlock}
+      \item \texttt{BlockQuote}
+      \item \texttt{OrderedList}
+      \item \texttt{BulletList}
+      \item \texttt{DefinitionList}
+      \item \texttt{Header}
+      \item \texttt{HorizontalRule}
+      \item \texttt{Table}
+      \item \texttt{Div}
+      \item \texttt{Null}
+      \item \texttt{Str}
+      \item \texttt{Emph}
+      \item \texttt{Underline}
+      \item \texttt{Strong}
+      \item \texttt{Strikeout}
+      \item \texttt{Superscript}
+      \item \texttt{Subscript}
+      \item \texttt{SmallCaps}
+      \item \texttt{Quoted}
+      \item \texttt{Cite}
+      \item \texttt{Code}
+      \item \texttt{Space}
+      \item \texttt{SoftBreak}
+      \item \texttt{LineBreak}
+      \item \texttt{Math}
+      \item \texttt{RawInline}
+      \item \texttt{Link}
+      \item \texttt{Image}
+      \item \texttt{Note}
+      \item \texttt{Span}
+    \end{enumerate}
+  \end{multicols}
+  \vspace*{-1em}
+  \caption{Úplný zoznam prvkov medziformátu programu Pandoc}
+  \label{fig:pandoc-elems}
+\end{figure}
+
+Je nutné podoktnúť, že Pandoc delí svoje prvky na blokové (block elements) a~neblokové (inline elements). To ovplyvňuje, ktoré prvky sa môžu nachádzať v~potomkoch jednotlivých prvkov a~často korešponduje s~výslednou podobou prvku, napr. implikuje medzery medzi odstavcami, ktoré sú blokovými prvkami. Pri spracovaní \textsc{ast} sa ale týmto rozdelením netreba veľmi zaoberať.
+
 \section{\TeX{}}
 \subsection{expl3 programming language for \TeX{}}
 \emph{Cite Vít's stuff.}
+
 \section{The Markdown package for \TeX{}}
+Makrobalík \emph{Markdown}~\cite{cstug-markdown} umožňuje doplniť dokumenty sádzané v~\TeX{}u o~úseky textu písané v~odľahčenom značkovacom jazyku Markdown, ktoré počas sadzby transformuje na natívne \TeX{}ové makrá. Vzhľad dokumentov je možné ovplyvniť predefinovaním \emph{medzimakier} sady \macro{markdownRenderer}\ldots, ktoré Markdown interne využíva na vysádzanie jednotlivých prvkov textu.
+Makrobalík Markdown ale neponúka podporu pre iné značkovacie jazyky a~formáty dokumentov.
+
+Parser Markdownu v~\LaTeX{}ovskom balíku Markdown pochádza z~knižnice \emph{lunamark}~\cite{lunamark}, za ktorou zhodou okolností tiež stojí John MacFarlane, autor Pandocu. Knižnica je zameraná na rýchlu konverziu Markdownu do iných bežne využívaných značkovacích formátov ako \textsc{html} alebo Docbook, ale i~dvoch formátov \TeX{}u: \LaTeX{}u a~Con\TeX{}tu. Keďže je lunamark napísaný v~jazyku Lua, ktorý je možné priamo spúšťať v~sádzacom systéme Lua\TeX{}, javil sa parser lunamarku vhodný na jeho začlenenie do Markdownu.
+
+Rýchlosť konverzie bola jednou z~priorít pri vývoji lunamarku, a~preto konverzia neprebieha v~dvoch fázach (do medziformátu a~z~medziformátu) ako v~prípade Pandocu. Namiesto toho tu dochádza k~priamej komunikácii medzi dvomi modulmi, vstupným (reader) a~výstupným (writer). Výstupný modul implementuje funkcie, ktoré definujú reprezentáciu rôznych prvkov textu vo výstupnom formáte a~vstupný modul počas toho, ako parsuje vstupný dokument, zároveň aj zostavuje výstup s~pomocou funkcií výstupného modulu, ktoré priamo volá.
+
+Tento princíp bol zachovaný aj v~Markdowne -- s~tým rozdielom, že existujúce výstupné moduly pre podporované formáty boli nahradené jedným, ktorý pre jednotlivé prvky textu generuje makrá \macro{markdownRenderer}\ldots. Tieto makrá je možné predefinovať a~tak upraviť štýl výstupu. Predvolenou hodnotou týchto makier sú makrá \macro{markdownRenderer\textrm{\ldots}Prototype}, ktoré expandujú na natívnu reprezentáciu príslušných prvkov systému \LaTeX{} (viď obr. \ref{fig:markdown-ast} a~\ref{fig:markdown-renderers}).
+\oldlooseness=-1
+
 \emph{Benefits: \LaTeX{} and Con\TeX{}t already supported!}
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[anchor=base, baseline, node distance=0.6cm]
+    \node (hello) {Hello\textvisiblespace};
+    \node [right=of hello, align=left, xshift=0.2cm] (mdemph) {
+      \macro{markdownRenderer} \\
+      \texttt{ Emphasis\{Markdown\}}
+    } ;
+      \node [below=of mdemph, align=left] (mdprotoemph) {
+        \macro{markdownRenderer} \\
+        \texttt{ EmphasisPrototype} \\
+        \texttt{ \{Markdown\}}
+      } ;
+      \node [below=of mdprotoemph] (texemph) {\macro{emph\{Markdown\}}} ;
+      \node [below=of texemph] (emph) {\emph{Markdown}} ;
+    \node [right=of mdemph, xshift=0.2cm] (exclamation) {!} ;
+    \node [right=of exclamation, align=left, xshift=0.2cm] (mdsep) {
+      \macro{markdownRenderer} \\
+      \texttt{ InterblockSeparator}
+    } ;
+      \node [below=of mdsep, align=left] (mdprotosep) {
+        \macro{markdownRenderer} \\
+        \texttt{ InterblockSeparator} \\
+        \texttt{ Prototype}
+      } ;
+      \node [below=of mdprotosep, yshift=0.14em] (texsep) {\macro{par}} ;
+
+    \path [gray] (hello) edge (mdemph) ;
+      \path [gray, ->] (mdemph) edge (mdprotoemph) ;
+      \path [gray, ->] (mdprotoemph) edge (texemph) ;
+      \path [gray, ->] (texemph) edge (emph) ;
+    \path [gray] (mdemph) edge (exclamation) ;
+    \path [gray] (exclamation) edge (mdsep) ;
+      \path [gray, ->] (mdsep) edge (mdprotosep) ;
+      \path [gray, ->] (mdprotosep) edge (texsep) ;
+  \end{tikzpicture}
+  \caption{Reprezentácia medzimakier a~výstupných makier balíku Markdown pre vstup ,,\texttt{Hello *Markdown*!}``}
+  \label{fig:markdown-ast}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \begin{multicols}{2}
+    \begin{enumerate}
+      \item Tickbox Renderers
+      \begin{enumerate}
+        \item \texttt{TickedBox}
+        \item \texttt{HalfTickedBox}
+        \item \texttt{UntickedBox}
+      \end{enumerate}
+      \item \texttt{InterblockSeparator}
+      \item \texttt{LineBreak}
+      \item \texttt{Ellipsis}
+      \item \texttt{Nbsp}
+      \item Special Character Renderers
+      \begin{enumerate}
+        \item \texttt{Ampersand}
+        \item \texttt{Backslash}
+        \item \texttt{Circumflex}
+        \item \texttt{DollarSign}
+        \item \texttt{Hash}
+        \item \texttt{LeftBrace}
+        \item \texttt{PercentSign}
+        \item \texttt{Pipe}
+        \item \texttt{RightBrace}
+        \item \texttt{Tilde}
+        \item \texttt{Underscore}
+      \end{enumerate}
+      \item \texttt{CodeSpan}
+      \item \texttt{Link}
+      \item \texttt{Image}
+      \item \texttt{ContentBlock}
+      \item Bullet List
+      \begin{enumerate}
+        \item \texttt{UlBegin}
+        \item \texttt{UlBeginTight}
+        \item \texttt{UlItem}
+        \item \texttt{UlItemEnd}
+        \item \texttt{UlEnd}
+        \item \texttt{UlEndTight}
+      \end{enumerate}
+      \item Ordered List
+      \begin{enumerate}
+        \item \texttt{OlBegin}
+        \item \texttt{OlBeginTight}
+        \item \texttt{OlItem}
+        \item \texttt{OlItemEnd}
+        \item \texttt{OlItemWithNumber}
+        \item \texttt{OlEnd}
+        \item \texttt{OlEndTight}
+      \end{enumerate}
+      \item Definition List
+      \begin{enumerate}
+        \item \texttt{DlBegin}
+        \item \texttt{DlBeginTight}
+        \item \texttt{DlItem}
+        \item \texttt{DlItemEnd}
+        \item \texttt{DlDefinitionBegin}
+        \item \texttt{DlDefinitionEnd}
+        \item \texttt{DlEnd}
+        \item \texttt{DlEndTight}
+      \end{enumerate}
+      \item Emphasis
+      \begin{enumerate}
+        \item \texttt{Emphasis}
+        \item \texttt{StrongEmphasis}
+      \end{enumerate}
+      \item Block Quote
+      \begin{enumerate}
+        \item \texttt{BlockQuoteBegin}
+        \item \texttt{BlockQuoteEnd}
+      \end{enumerate}
+      \item Code Block
+      \begin{enumerate}
+        \item \texttt{InputVerbatim}
+        \item \texttt{InputFencedCode}
+      \end{enumerate}
+      \item YAML Metadata
+      \begin{enumerate}  % nepotrebné?
+        \item \texttt{JekyllDataBegin}
+        \item \texttt{JekyllDataEnd}
+        \item \texttt{JekyllDataMappingBegin}
+        \item \texttt{JekyllDataMappingEnd}
+        \item \texttt{JekyllDataSequenceBegin}
+        \item \texttt{JekyllDataSequenceEnd}
+        \item \texttt{JekyllDataBoolean}
+        \item \texttt{JekyllDataNumber}
+        \item \texttt{JekyllDataString}
+        \item \texttt{JekyllDataEmpty}
+      \end{enumerate}
+      \item Heading
+      \begin{enumerate}
+        \item \texttt{HeadingOne}
+        \item \texttt{HeadingTwo}
+        \item \texttt{HeadingThree}
+        \item \texttt{HeadingFour}
+        \item \texttt{HeadingFive}
+        \item \texttt{HeadingSix}
+      \end{enumerate}
+      \item \texttt{HorizontalRule}
+      \item \texttt{Footnote}
+      \item \texttt{Cite}
+      \item \texttt{TextCite}
+      \item \texttt{Table}
+      \item \texttt{InlineHtmlComment}
+    \end{enumerate}
+  \end{multicols}
+  \vspace*{-1em}
+  \caption{Úplný zoznam výstupných makier balíku Markdown k~verzii 2.11.0}
+  \label{fig:markdown-renderers}
+\end{figure}
+
 \subsection{Lunamark writer - a previously explored approach}
 \emph{Maybe mention projekt děkana here}
 \section{Comparison of Pandoc and Markdown}
@@ -120,7 +363,6 @@ Text goes here.
 \subsection{pandocInput, shellesc/write18 etc.}
 \emph{maybe nějaký veselý historky z natáčení (shellesc, pandocInput, jak pejsek s kočičkou spustili Pandoc z TeXu, codeBlocks v samostatných súboroch + auxdir (haha) etc.)}
 \section{Example documents}
-The citation is here to get the bibliography into TOC. \cite{greenberg98}
 
 \chapter{Conclusion}
 \section{Future work}
