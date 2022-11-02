@@ -106,7 +106,7 @@
 \emph{Outline the goals of my thesis and the motivations behind them.}
 
 \chapter{State of the art}
-\emph{Anything here?}
+\emph{Short outline. Quickly mention discussed utilities.}
 
 \section{Pandoc}
 \emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as \textsc{html}, docx, various Markdown flavours, \TeX{} formats like \LaTeX{} and Con\TeX{}t or roff for Unix manual pages. It consists of a core Haskell library and a command line tool providing access to this library. % Výstup konverzie je možné ovplyvniť pomocou \emph{filtrov}, čo sú používateľské programy, ktoré upravujú dokument počas konverzie. Pri konverzii do \TeX u má ale autor len obmedzené možnosti, ako ovplyvniť vzhľad výsledných dokumentov.
@@ -143,6 +143,11 @@ Markdown's parser originates from a Lua library called \emph{lunamark}~\cite{lun
 \emph{Mention the dean's project and what the "original" goal of it was, as well as why the goal eventually shifted (we found a better method).}
 
 \section{Comparison of Pandoc and Markdown}
+
+\emph{Mention differences between the sets of elements.}
+
+(...) Technically, the Markdown packages already provides a plain \TeX{} writer for Markdown. However, using that would only cover the elements of Pandoc \textsc{ast} that are already present in the Markdown format. (...)
+
 \emph{Maybe dump the relevant chapter of the article here!}
 
 \begin{figure}
@@ -165,7 +170,7 @@ Markdown's parser originates from a Lua library called \emph{lunamark}~\cite{lun
 
 \begin{figure}
   \centering
-  \begin{multicols}{2}
+  \begin{multicols}{3}
     \begin{enumerate}
       \item \texttt{Plain}
       \item \texttt{Para}
@@ -361,17 +366,20 @@ Markdown's parser originates from a Lua library called \emph{lunamark}~\cite{lun
 \end{figure}
 
 \chapter{Implementation}
-\emph{Fluff text here?}
+\emph{Outline the chapter.}
 
 \section{The custom Pandoc writer itself}
 \section{\TeX{} macropackage surrounding the writer}
 \subsection{pandoc... macros}
 \subsection{pandocInput, shellesc/write18 etc.}
 \emph{maybe nějaký veselý historky z natáčení (shellesc, pandocInput, jak pejsek s kočičkou spustili Pandoc z TeXu, codeBlocks v samostatných súboroch + auxdir (haha) etc.)}
+
 \section{Example documents}
+\emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \textbf{Consider if this shouldn't be a separate chapter.}}
 
 \chapter{Conclusion}
 \section{Future work}
+\emph{Mention open issues. Also the Haskell plans, solidification of the macros interface and the relevant ongoing discussion.}
 
 \printbibliography[heading=bibintoc] %% Print the bibliography.
 
