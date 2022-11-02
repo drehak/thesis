@@ -189,17 +189,24 @@ The \textsc{ast} itself is exposed via a special format named \texttt{native}, w
 \emph{expl3 deserves a mention because it greatly simplifies programming in \TeX{}.}
 
 \section{The Markdown package for \TeX{}}
-Makrobalík \emph{Markdown}~\cite{cstug-markdown} umožňuje doplniť dokumenty sádzané v~\TeX{}u o~úseky textu písané v~odľahčenom značkovacom jazyku Markdown, ktoré počas sadzby transformuje na natívne \TeX{}ové makrá. Vzhľad dokumentov je možné ovplyvniť predefinovaním \emph{medzimakier} sady \macro{markdownRenderer}\ldots, ktoré Markdown interne využíva na vysádzanie jednotlivých prvkov textu.
-Makrobalík Markdown ale neponúka podporu pre iné značkovacie jazyky a~formáty dokumentov.
+The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package provides the means to embed blocks of text written in the Markdown markup language directly into \TeX{} documents. During the typesetting process, these blocks are parsed and converted into Markdown's own set of intermediate macros, which are then expanded into native \TeX{} macros correspoding to the input.
 
-Parser Markdownu v~\LaTeX{}ovskom balíku Markdown pochádza z~knižnice \emph{lunamark}~\cite{lunamark}, za ktorou zhodou okolností tiež stojí John MacFarlane, autor Pandocu. Knižnica je zameraná na rýchlu konverziu Markdownu do iných bežne využívaných značkovacích formátov ako \textsc{html} alebo Docbook, ale i~dvoch formátov \TeX{}u: \LaTeX{}u a~Con\TeX{}tu. Keďže je lunamark napísaný v~jazyku Lua, ktorý je možné priamo spúšťať v~sádzacom systéme Lua\TeX{}, javil sa parser lunamarku vhodný na jeho začlenenie do Markdownu.
+Markdown's parser originates from a Lua library called \emph{lunamark}~\cite{lunamark}, which is coincidentally also developed by John MacFarlane, the author of Pandoc. lunamark provides a fast conversion of Markdown (its only input format) into other commonly used markup languages, which include \LaTeX{} and Con\TeX{}t. Since Lua\TeX{} is able to run Lua code directly, lunamark's parser was suitable for its use in the Markdown package.
 
-Rýchlosť konverzie bola jednou z~priorít pri vývoji lunamarku, a~preto konverzia neprebieha v~dvoch fázach (do medziformátu a~z~medziformátu) ako v~prípade Pandocu. Namiesto toho tu dochádza k~priamej komunikácii medzi dvomi modulmi, vstupným (reader) a~výstupným (writer). Výstupný modul implementuje funkcie, ktoré definujú reprezentáciu rôznych prvkov textu vo výstupnom formáte a~vstupný modul počas toho, ako parsuje vstupný dokument, zároveň aj zostavuje výstup s~pomocou funkcií výstupného modulu, ktoré priamo volá.
+% Rýchlosť konverzie bola jednou z~priorít pri vývoji lunamarku, a~preto konverzia neprebieha v~dvoch fázach (do medziformátu a~z~medziformátu) ako v~prípade Pandocu. Namiesto toho tu dochádza k~priamej komunikácii medzi dvomi modulmi, vstupným (reader) a~výstupným (writer). Výstupný modul implementuje funkcie, ktoré definujú reprezentáciu rôznych prvkov textu vo výstupnom formáte a~vstupný modul počas toho, ako parsuje vstupný dokument, zároveň aj zostavuje výstup s~pomocou funkcií výstupného modulu, ktoré priamo volá.
 
-Tento princíp bol zachovaný aj v~Markdowne -- s~tým rozdielom, že existujúce výstupné moduly pre podporované formáty boli nahradené jedným, ktorý pre jednotlivé prvky textu generuje makrá \macro{markdownRenderer}\ldots. Tieto makrá je možné predefinovať a~tak upraviť štýl výstupu. Predvolenou hodnotou týchto makier sú makrá \macro{markdownRenderer\textrm{\ldots}Prototype}, ktoré expandujú na natívnu reprezentáciu príslušných prvkov systému \LaTeX{} (viď obr. \ref{fig:markdown-ast} a~\ref{fig:markdown-renderers}).
-\oldlooseness=-1
+% Tento princíp bol zachovaný aj v~Markdowne -- s~tým rozdielom, že existujúce výstupné moduly pre podporované formáty boli nahradené jedným, ktorý pre jednotlivé prvky textu generuje makrá \macro{markdownRenderer}\ldots. Tieto makrá je možné predefinovať a~tak upraviť štýl výstupu. Predvolenou hodnotou týchto makier sú makrá \macro{markdownRenderer\textrm{\ldots}Prototype}, ktoré expandujú na natívnu reprezentáciu príslušných prvkov systému \LaTeX{} (viď obr. \ref{fig:markdown-ast} a~\ref{fig:markdown-renderers}).
+% \oldlooseness=-1
 
 \emph{Benefits: \LaTeX{} and Con\TeX{}t already supported!}
+
+\subsection{Lunamark writer - a previously explored approach}
+Markdown's parser originates from a Lua library called \emph{lunamark}~\cite{lunamark}, which is coincidentally also developed by John MacFarlane, the author of Pandoc. lunamark provides a fast conversion of Markdown (its only input format) into other commonly used markup languages, which include \LaTeX{} and Con\TeX{}t. Since Lua\TeX{} is able to run Lua code directly, lunamark's parser was suitable for its use in the Markdown package.
+
+\emph{Mention the dean's project and what the "original" goal of it was, as well as why the goal eventually shifted (we found a better method).}
+
+\section{Comparison of Pandoc and Markdown}
+\emph{Maybe dump the relevant chapter of the article here!}
 
 \begin{figure}
   \centering
@@ -352,12 +359,6 @@ Tento princíp bol zachovaný aj v~Markdowne -- s~tým rozdielom, že existujúc
   \caption{Úplný zoznam výstupných makier balíku Markdown k~verzii 2.11.0}
   \label{fig:markdown-renderers}
 \end{figure}
-
-\subsection{Lunamark writer - a previously explored approach}
-\emph{Shortly introduce Lunamark as the "core" of Markdown. Mention the dean's project and what the "original" goal of it was, as well as why the goal eventually shifted (we found a better method).}
-
-\section{Comparison of Pandoc and Markdown}
-\emph{Maybe dump the relevant chapter of the article here!}
 
 \chapter{Implementation}
 \emph{Fluff text here?}
