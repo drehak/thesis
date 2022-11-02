@@ -109,9 +109,13 @@
 \emph{Anything here?}
 
 \section{Pandoc}
-Program \emph{Pandoc}~\cite{pandoc} umožňuje konverziu medzi desiatkami značkovacích jazykov a~dokumentových formátov, ako sú dialekty Markdownu, formáty \TeX u (\LaTeX{} a~Con\TeX{}t), \textsc{html}, docx, nebo roff. Výstup konverzie je možné ovplyvniť pomocou \emph{filtrov}, čo sú používateľské programy, ktoré upravujú dokument počas konverzie. Pri konverzii do \TeX u má ale autor len obmedzené možnosti, ako ovplyvniť vzhľad výsledných dokumentov.
+\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as \textsc{html}, docx, various Markdown flavours, \TeX{} formats like \LaTeX{} and Con\TeX{}t or roff for Unix manual pages. It consists of a core Haskell library and a command line tool providing access to this library. % Výstup konverzie je možné ovplyvniť pomocou \emph{filtrov}, čo sú používateľské programy, ktoré upravujú dokument počas konverzie. Pri konverzii do \TeX u má ale autor len obmedzené možnosti, ako ovplyvniť vzhľad výsledných dokumentov.
 
-Konverzia v~Pandocu prebieha v~dvoch fázach: konverziou vstupného formátu na natívnu reprezentáciu dokumentu a~následnou konverziou tejto reprezentácie na výstupný formát. Dokumentácia Pandocu túto natívnu reprezentáciu nazýva \emph{abstract syntax tree}, skrátene \textsc{ast} a~vskutku sa jedná o~strom prvkov Pandocu, ktorý sa uprosted konverzie celý nachádza v~operačnej pamäti (viď obr. \ref{fig:pandoc-ast}).
+Internally, the conversion in Pandoc is performed in two phases. First, the input format is converted into a native represenation, also called an \emph{abstract syntax tree} (or \textsc{ast} for short). Then, this \textsc{ast} is converted into the output format. Such a design allows for the input format readers to be written as modules independent of individual output format writers, and vice versa. This also makes it easy to extend the set of Pandoc's supported formats.
+
+It should be noted that a support for a particular format doesn't have to be bidirectional. For example, Pandoc currently provides a Con\TeX{}t writer, but not a Con\TeX{}t reader. Thus, it is possible to implement a reader without a corresponding writer, and vice versa.
+
+The \textsc{ast} itself is exposed via a special format named \texttt{native}, which inputs and outputs the entire \textsc{ast} in Pandoc's internal Haskell representaion. Alternatively, the format \texttt{json} inputs and outputs the \textsc{ast} in the \textsc{json} format. % Keďže existujú rôzne knižnice v~jazyku Lua schopné parsovať formát \textsc{json},\footnote{Knižnica, ktorú naše rozšírenie využíva, je dostupná na \texttt{https://github.com/rxi/json.lua}.} je pre naše rozšírenie Markdownu táto reprezentácia vhodnejšia.
 
 \begin{figure}
   \centering
@@ -125,11 +129,9 @@ Konverzia v~Pandocu prebieha v~dvoch fázach: konverziou vstupného formátu na 
       child { node (exclamation) {\texttt{Str "!"}} edge from parent[->, gray]
     };
   \end{tikzpicture}
-  \caption{Pandoc \textsc{ast} pre vstup Markdownu ,,\texttt{Hello *Markdown*!}``}
+  \caption{A graphical Pandoc \textsc{ast} representation for the Markdown input ,,\texttt{Hello *Markdown*!}``}
   \label{fig:pandoc-ast}
 \end{figure}
-
-Pri zadaní výstupného formátu \texttt{native} vráti Pandoc na výstup celý tento strom vo svojej internej reprezentácii jazyka \emph{Haskell}, v~ktorom je Pandoc napísaný. Alternatívne je možné zadaním výstupného formátu \texttt{json} získať ekvivalentnú reprezentáciu tohoto stromu vo formáte \textsc{json}. Keďže existujú rôzne knižnice v~jazyku Lua schopné parsovať formát \textsc{json},\footnote{Knižnica, ktorú naše rozšírenie využíva, je dostupná na \texttt{https://github.com/rxi/json.lua}.} je pre naše rozšírenie Markdownu táto reprezentácia vhodnejšia.
 
 % Prvky Pandocu prevzaté z dokumentácie: \textsf{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}
 
@@ -174,11 +176,11 @@ Pri zadaní výstupného formátu \texttt{native} vráti Pandoc na výstup celý
     \end{enumerate}
   \end{multicols}
   \vspace*{-1em}
-  \caption{Úplný zoznam prvkov medziformátu programu Pandoc}
+  \caption{Complete list of Pandoc \textsc{ast} elements (as of Pandoc 2.14.2)}
   \label{fig:pandoc-elems}
 \end{figure}
 
-Je nutné podoktnúť, že Pandoc delí svoje prvky na blokové (block elements) a~neblokové (inline elements). To ovplyvňuje, ktoré prvky sa môžu nachádzať v~potomkoch jednotlivých prvkov a~často korešponduje s~výslednou podobou prvku, napr. implikuje medzery medzi odstavcami, ktoré sú blokovými prvkami. Pri spracovaní \textsc{ast} sa ale týmto rozdelením netreba veľmi zaoberať.
+% Je nutné podoktnúť, že Pandoc delí svoje prvky na blokové (block elements) a~neblokové (inline elements). To ovplyvňuje, ktoré prvky sa môžu nachádzať v~potomkoch jednotlivých prvkov a~často korešponduje s~výslednou podobou prvku, napr. implikuje medzery medzi odstavcami, ktoré sú blokovými prvkami. Pri spracovaní \textsc{ast} sa ale týmto rozdelením netreba veľmi zaoberať.
 
 \section{\TeX{}}
 \emph{Shortly explain what \TeX{} is and how it differs from \LaTeX{}}.
