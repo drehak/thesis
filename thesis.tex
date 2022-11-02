@@ -103,13 +103,10 @@
 %% \printnoidxglossary[title={Glossary}]
 
 \chapter{Introduction}
+\emph{Outline the goals of my thesis and the motivations behind them.}
 
 \chapter{State of the art}
-\begin{markdown*}{%
-  hybrid,
-}
-Text goes here.
-\end{markdown*}
+\emph{Anything here?}
 
 \section{Pandoc}
 Program \emph{Pandoc}~\cite{pandoc} umožňuje konverziu medzi desiatkami značkovacích jazykov a~dokumentových formátov, ako sú dialekty Markdownu, formáty \TeX u (\LaTeX{} a~Con\TeX{}t), \textsc{html}, docx, nebo roff. Výstup konverzie je možné ovplyvniť pomocou \emph{filtrov}, čo sú používateľské programy, ktoré upravujú dokument počas konverzie. Pri konverzii do \TeX u má ale autor len obmedzené možnosti, ako ovplyvniť vzhľad výsledných dokumentov.
@@ -184,8 +181,10 @@ Pri zadaní výstupného formátu \texttt{native} vráti Pandoc na výstup celý
 Je nutné podoktnúť, že Pandoc delí svoje prvky na blokové (block elements) a~neblokové (inline elements). To ovplyvňuje, ktoré prvky sa môžu nachádzať v~potomkoch jednotlivých prvkov a~často korešponduje s~výslednou podobou prvku, napr. implikuje medzery medzi odstavcami, ktoré sú blokovými prvkami. Pri spracovaní \textsc{ast} sa ale týmto rozdelením netreba veľmi zaoberať.
 
 \section{\TeX{}}
+\emph{Shortly explain what \TeX{} is and how it differs from \LaTeX{}}.
+
 \subsection{expl3 programming language for \TeX{}}
-\emph{Cite Vít's stuff.}
+\emph{expl3 deserves a mention because it greatly simplifies programming in \TeX{}.}
 
 \section{The Markdown package for \TeX{}}
 Makrobalík \emph{Markdown}~\cite{cstug-markdown} umožňuje doplniť dokumenty sádzané v~\TeX{}u o~úseky textu písané v~odľahčenom značkovacom jazyku Markdown, ktoré počas sadzby transformuje na natívne \TeX{}ové makrá. Vzhľad dokumentov je možné ovplyvniť predefinovaním \emph{medzimakier} sady \macro{markdownRenderer}\ldots, ktoré Markdown interne využíva na vysádzanie jednotlivých prvkov textu.
@@ -353,10 +352,14 @@ Tento princíp bol zachovaný aj v~Markdowne -- s~tým rozdielom, že existujúc
 \end{figure}
 
 \subsection{Lunamark writer - a previously explored approach}
-\emph{Maybe mention projekt děkana here}
+\emph{Shortly introduce Lunamark as the "core" of Markdown. Mention the dean's project and what the "original" goal of it was, as well as why the goal eventually shifted (we found a better method).}
+
 \section{Comparison of Pandoc and Markdown}
+\emph{Maybe dump the relevant chapter of the article here!}
 
 \chapter{Implementation}
+\emph{Fluff text here?}
+
 \section{The custom Pandoc writer itself}
 \section{\TeX{} macropackage surrounding the writer}
 \subsection{pandoc... macros}
