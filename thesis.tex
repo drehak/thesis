@@ -89,6 +89,9 @@
 \usepackage{floatrow} %% Putting captions above tables
 \floatsetup[table]{capposition=top}
 \usepackage[babel]{csquotes} %% Context-sensitive quotation marks
+\usepackage{pdfpages}
+\usepackage{graphicx}
+\usepackage[export]{adjustbox}
 
 \let\oldlooseness=\looseness
 \newcommand{\macro}[1]{\texttt{\textbackslash{}{#1}}}
@@ -132,7 +135,7 @@ Markdown's parser originates from a Lua library called \emph{lunamark}~\cite{lun
 
 % Rýchlosť konverzie bola jednou z~priorít pri vývoji lunamarku, a~preto konverzia neprebieha v~dvoch fázach (do medziformátu a~z~medziformátu) ako v~prípade Pandocu. Namiesto toho tu dochádza k~priamej komunikácii medzi dvomi modulmi, vstupným (reader) a~výstupným (writer). Výstupný modul implementuje funkcie, ktoré definujú reprezentáciu rôznych prvkov textu vo výstupnom formáte a~vstupný modul počas toho, ako parsuje vstupný dokument, zároveň aj zostavuje výstup s~pomocou funkcií výstupného modulu, ktoré priamo volá.
 
-% Tento princíp bol zachovaný aj v~Markdowne -- s~tým rozdielom, že existujúce výstupné moduly pre podporované formáty boli nahradené jedným, ktorý pre jednotlivé prvky textu generuje makrá \macro{markdownRenderer}\ldots. Tieto makrá je možné predefinovať a~tak upraviť štýl výstupu. Predvolenou hodnotou týchto makier sú makrá \macro{markdownRenderer\textrm{\ldots}Prototype}, ktoré expandujú na natívnu reprezentáciu príslušných prvkov systému \LaTeX{} (viď obr. \ref{fig:markdown-ast} a~\ref{fig:markdown-renderers}).
+% Tento princíp bol zachovaný aj v~Markdowne -- s~tým rozdielom, že existujúce výstupné moduly pre podporované formáty boli nahradené jedným, ktorý pre jednotlivé prvky textu generuje makrá \macro{markdownRenderer}\ldots. Tieto makrá je možné predefinovať a~tak upraviť štýl výstupu. Predvolenou hodnotou týchto makier sú makrá \macro{markdownRenderer\textrm{\ldots}Prototype}, ktoré expandujú na natívnu reprezentáciu príslušných prvkov systému \LaTeX{} (viď obr. \ref{fExample page from an \textsc{HTML} document typeset with the proof of concept}ig:markdown-ast} a~\ref{fig:markdown-renderers}).
 % \oldlooseness=-1
 
 \emph{Benefits: \LaTeX{} and Con\TeX{}t already supported!}
@@ -375,7 +378,23 @@ Markdown's parser originates from a Lua library called \emph{lunamark}~\cite{lun
 \emph{maybe nějaký veselý historky z natáčení (shellesc, pandocInput, jak pejsek s kočičkou spustili Pandoc z TeXu, codeBlocks v samostatných súboroch + auxdir (haha) etc.)}
 
 \section{Example documents}
-\emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \textbf{Consider if this shouldn't be a separate chapter.}}
+\emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \label{fig:html-browsers-typeset} \textbf{Consider if this shouldn't be a separate chapter.}}
+
+% \includepdf[pages={1}]{pandoc-to-markdown/examples/html-browsers.pdf}
+
+\begin{figure}[h]
+   \centering
+   \begin{tabular}{@{}c@{\hspace{.5cm}}c@{}}
+     \includegraphics[
+       width=0.6\textwidth,
+       page=1,
+       frame,
+       trim=2cm 2cm 2cm 2cm
+     ]{pandoc-to-markdown/examples/html-browsers.pdf}
+   \end{tabular}
+ \caption{Example page from an \textsc{HTML} document typeset with the proof of concept}
+ \label{fig:html-browsers-typeset}
+\end{figure}
 
 \chapter{Conclusion}
 \section{Future work}
