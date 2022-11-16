@@ -95,6 +95,7 @@
 
 \let\oldlooseness=\looseness
 \newcommand{\macro}[1]{\texttt{\textbackslash{}{#1}}}
+\newcommand{\renderer}[1]{\texttt{\textbackslash{}markdownRenderer{#1}}}
 
 \begin{document}
 %% Uncomment the following lines (by removing the %% at the beginning)
@@ -109,7 +110,7 @@
 \emph{Outline the goals of my thesis and the motivations behind them.}
 
 \chapter{State of the art}
-\emph{Short outline. Quickly mention discussed utilities.}
+This chapter briefly introduces Pandoc and the relevant parts its architecture. It also \emph{something something} \TeX{} and introduces the Markdown package for \TeX{}, which will be utilized to quickly produce a simple proof of concept for the Pandoc writer.
 
 \section{Pandoc}
 \emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as \textsc{html}, docx, various Markdown flavours, \TeX{} formats like \LaTeX{} and Con\TeX{}t or roff for Unix manual pages. It consists of a core Haskell library and a command line tool providing access to this library. % Výstup konverzie je možné ovplyvniť pomocou \emph{filtrov}, čo sú používateľské programy, ktoré upravujú dokument počas konverzie. Pri konverzii do \TeX u má ale autor len obmedzené možnosti, ako ovplyvniť vzhľad výsledných dokumentov.
@@ -147,11 +148,32 @@ Markdown's parser originates from a Lua library called \emph{lunamark}~\cite{lun
 
 \section{Comparison of Pandoc and Markdown}
 
-\emph{Mention differences between the sets of elements.}
+\begin{itemize}
+\item they kinda do the same thing
+\item common elements
+\item elements that work differently
+\item elements without equivalents in Markdown
+\end{itemize}
 
-(...) Technically, the Markdown packages already provides a plain \TeX{} writer for Markdown. However, using that would only cover the elements of Pandoc \textsc{ast} that are already present in the Markdown format. (...)
+An example of a Pandoc element with a straightforward mapping to Markdown macros would be \texttt{Emph}, which directly corresponds to the macro \renderer{Emphasis}. A few more elements have such equivalents, although in the case of \texttt{CodeBlock}, the order of its two parameters needs to be swapped:
 
-\emph{Maybe dump the relevant chapter of the article here!}
+\begin{itemize}
+\item \texttt{Emph} $\rightarrow$ \renderer{Emphasis}
+\item \texttt{Strong} $\rightarrow$ \renderer{StrongEmphasis}
+\item \texttt{HorizontalRule} $\rightarrow$ \renderer{HorizontalRule}
+\item \texttt{LineBreak} $\rightarrow$ \renderer{LineBreak}
+\item \texttt{Note} $\rightarrow$ \renderer{Footnote}
+\item \texttt{Code} $\rightarrow$ \renderer{CodeSpan}
+\item \texttt{CodeBlock} $\rightarrow$ \renderer{InputFencedCode}
+\end{itemize}
+
+For other elements, the mapping to Markdown macros is a bit more complicated. \emph{(TODO)}
+
+Some Pandoc elements take a parameter of a type with multiple constant constructors. (In imperative languages, the closest equivalent would be an enumerable type.) For example, one of the parameters of \texttt{Cite} is of the type \texttt{CitationMode}, which itself has three constructors without parameters - \texttt{AuthorInText}, \texttt{SuppressAuthor} and \texttt{NormalCitation}. Another example would be \texttt{QuoteType} passed as a parameter of \texttt{Quoted} with two constructors, \texttt{SingleQuote} and \texttt{DoubleQuote} - although \texttt{Quoted} has no equivalents among Markdown macros.
+
+\emph{(TODO - more?)}
+
+Finally, there is a group of elements without any corresponding macros, like the afforementioned \texttt{Quoted}. This is understandable, since the syntax of Markdown cannot express \emph{(better word?)} these elements. A few more trivial examples would be \texttt{Underline}, \texttt{Strikeout}, \texttt{Superscript}, \texttt{Subscript} and \texttt{SmallCaps}. \emph{(TODO: Revise for latest Markdown version ($\rightarrow$ Future work))}
 
 \begin{figure}
   \centering
