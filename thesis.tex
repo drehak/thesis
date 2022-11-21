@@ -173,7 +173,7 @@ Some Pandoc elements take a parameter of a type with multiple constant construct
 
 \emph{(TODO - more?)}
 
-Finally, there is a group of elements without any corresponding macros, like the afforementioned \texttt{Quoted}. This is understandable, since the syntax of Markdown cannot express \emph{(better word?)} these elements. A few more trivial examples would be \texttt{Underline}, \texttt{Strikeout}, \texttt{Superscript}, \texttt{Subscript} and \texttt{SmallCaps}. \emph{(TODO: Revise for latest Markdown version ($\rightarrow$ Future work))}
+Finally, there is a group of elements without any corresponding macros, like the afforementioned \texttt{Quoted}. This is understandable, since the syntax of Markdown does not cover these types of elements. A few more trivial examples would be \texttt{Underline}, \texttt{Strikeout}, \texttt{Superscript}, \texttt{Subscript} and \texttt{SmallCaps}. \emph{(TODO: Revise for latest Markdown version ($\rightarrow$ Future work))}
 
 \begin{figure}
   \centering
@@ -421,6 +421,14 @@ Finally, there is a group of elements without any corresponding macros, like the
 \chapter{Conclusion}
 \section{Future work}
 \emph{Mention open issues. Also the Haskell plans, solidification of the macros interface and the relevant ongoing discussion.}
+
+\subsection{Handling of deprecation of classic custom writers}
+
+There are currently two styles of defining custom writers for Pandoc, to which the Pandoc documentation refers to as ``classic'' and ``new''. The main difference between them is that the classic style writer defines its rendering functions on the top level, while in the new style, everything is processed through a top-level function named \texttt{Writer} which contains all the custom writer logic.
+
+For the plain \TeX{} writer, I have decided to go with the classic style. There were multiple reasons for this, the main one being that the classic style is what Pandoc's documentation covers. Another reason is that support for the new style was only introduced in Pandoc 2.18\footnote{The Pandoc documentation actually states that the new style of custom writers was introduced in 2.17.2. This is wrong. No such version was even released, 2.17.1.1 was immediately followed by 2.18.}, which was released in January 2022. Repositories of several high-profile Linux distributions ship versions of Pandoc that are way older than that - for instance, Fedora 37 released in November 2022 provides only packages with Pandoc 2.14.0.3\footnote{\url{https://packages.fedoraproject.org/pkgs/pandoc/pandoc/fedora-37.html}}, which was released in June 2021. Another example is Ubuntu 22.04 LTS (codenamed ``Jammy Jellyfish''), which, despite being released in April 2022, still ships Pandoc 2.9.2.1\footnote{\url{https://packages.ubuntu.com/jammy/pandoc}} from March 2020.
+
+Unbeknownst to me at the time, classic custom writers were going to be deprecated. According to the discussion on the related pull request\footnote{\url{https://github.com/jgm/pandoc/pull/8343}}, it will still be possible to update a classic writer to a new-style one. However, other breaking changes might still be introduced. As long as the plain \TeX{} writer is an external one instead of being built into Pandoc itself, it will have to deal with this in the future.
 
 \printbibliography[heading=bibintoc] %% Print the bibliography.
 
