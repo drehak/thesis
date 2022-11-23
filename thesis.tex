@@ -110,7 +110,7 @@
 \emph{Outline the goals of my thesis and the motivations behind them.}
 
 \chapter{State of the art}
-This chapter briefly introduces Pandoc and the relevant parts its architecture. It also \emph{something something} \TeX{} and introduces the Markdown package for \TeX{}, which will be utilized to quickly produce a simple proof of concept for the Pandoc writer.
+This chapter briefly introduces Pandoc and the relevant parts of its architecture. It also introduces the \TeX{} and \LaTeX{} typeseting systems and finally the Markdown package, which works with both of these systems and which will be utilized to quickly produce a simple proof of concept for the Pandoc writer.
 
 \section{Pandoc}
 \emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as \textsc{html}, docx, various Markdown flavours, \TeX{} formats like \LaTeX{} and Con\TeX{}t or roff for Unix manual pages. It consists of a core Haskell library and a command line tool providing access to this library. % Výstup konverzie je možné ovplyvniť pomocou \emph{filtrov}, čo sú používateľské programy, ktoré upravujú dokument počas konverzie. Pri konverzii do \TeX u má ale autor len obmedzené možnosti, ako ovplyvniť vzhľad výsledných dokumentov.
@@ -121,7 +121,72 @@ It should be noted that a support for a particular format doesn't have to be bid
 
 The \textsc{ast} itself is exposed via a special format named \texttt{native}, which inputs and outputs the entire \textsc{ast} in Pandoc's internal Haskell representaion. Alternatively, the format \texttt{json} inputs and outputs the \textsc{ast} in the \textsc{json} format. % Keďže existujú rôzne knižnice v~jazyku Lua schopné parsovať formát \textsc{json},\footnote{Knižnica, ktorú naše rozšírenie využíva, je dostupná na \texttt{https://github.com/rxi/json.lua}.} je pre naše rozšírenie Markdownu táto reprezentácia vhodnejšia.
 
-% Je nutné podoktnúť, že Pandoc delí svoje prvky na blokové (block elements) a~neblokové (inline elements). To ovplyvňuje, ktoré prvky sa môžu nachádzať v~potomkoch jednotlivých prvkov a~často korešponduje s~výslednou podobou prvku, napr. implikuje medzery medzi odstavcami, ktoré sú blokovými prvkami. Pri spracovaní \textsc{ast} sa ale týmto rozdelením netreba veľmi zaoberať.
+\subsection{Usage}
+
+The simplest way to use Pandoc is through the provided command line utility. When no arguments are provided, Pandoc takes text formatted with Markdown from the standard input and outputs the \textsc{html} equivalent on the standard output:
+
+$ $
+
+\noindent
+\texttt{\$ echo 'Hello *world*!' | pandoc} \\
+\texttt{<p>Hello <em>world</em>!</p>}
+
+$ $
+
+Other builtin formats for input and output can be specificied using the \texttt{-{}-from} and \texttt{-{}-to} options (\texttt{-f} and \texttt{-t} for short). Naturally, one can also specify names of the input and output files. For example, if we have the input file \textit{shopping-list.html} formatted using \textsc{html} with the following contents:
+
+$ $
+
+\noindent
+\texttt{<h3>Shooping list</h3>} \\
+\texttt{<ul>} \\
+\texttt{    <li>Eggs</li>} \\
+\texttt{    <li>Onions</li>} \\
+\texttt{    <li>Butter</li>} \\
+\texttt{</ul>}
+
+$ $
+
+then the following command:
+
+$ $
+
+\noindent
+\texttt{pandoc -f html -t man shopping-list.html -o shopping-list.1}
+
+$ $
+
+creates the output file \textit{shopping-list.1} with the following content, formatted using macros of the \textit{roff} typesetting system used for Unix manual pages:
+
+$ $
+
+\noindent
+\texttt{.SS Shooping list} \\
+\texttt{.IP \textbackslash[bu] 2} \\
+\texttt{Eggs} \\
+\texttt{.IP \textbackslash[bu] 2} \\
+\texttt{Onions} \\
+\texttt{.IP \textbackslash[bu] 2} \\
+\texttt{Butter}
+
+$ $
+
+If we want to define our own input/output format, we ultimately have two options. The first one is to directly extend the code of Pandoc itself with a new reader/writer module. This would require a knowledge of Haskell and Pandoc's codebase. Moreover, such a solution wouldn't be very portable, as to actually use such a module, a recompilation of Pandoc would be necessary. Of course, there's the possibility that Pandoc maintainers would consider the module worthy and of a sufficient quality (and the format significant enough) of inclusion into Pandoc's codebase. Even then, the format would only be available in new versions of Pandoc.
+
+The other option is to write a reader/writer in the Lua programming language using the supported Lua API, which is described in Pandoc's documentation\footnote{\url{https://pandoc.org/custom-writers.html}}. Then, if we simply use the path to the Lua reader/writer as an input/output format, Pandoc's built-in Lua interpreter will parse and use that reader/writer at runtime. For example, if we defined a plain \TeX{} writer in the file \texttt{plaintex.lua} and then wanted to use plain \TeX{} as the output format, it would be sufficient to call:
+
+$ $
+
+\noindent
+\texttt{\$ echo 'Hello *world*!' | pandoc -t plaintex.lua} \\
+
+$ $
+
+We will construct such a writer in chapter 3.
+
+$ $
+
+As an aside, for some output formats (like \LaTeX{}, \textsc{html} or \textit{roff} above), the default output produced by Pandoc does not constitute a complete document ready for viewing/typesetting, but rather just a short snippet. This can be amended by the \texttt{-{}-standalone} option (\texttt{-s}~for short), which surrounds the snippet with a template containing the skeleton of a full document. (Most of the templates are too long to reasonably embed an example of such an output here.)
 
 \section{\TeX{}}
 \emph{Shortly explain what \TeX{} is and how it differs from \LaTeX{}}.
