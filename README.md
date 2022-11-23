@@ -2,4 +2,4 @@
 
 ## Typesetting
 
-`$ latexmk -lualatex thesis.tex`
+`$ latexmk thesis.tex -pdf`
