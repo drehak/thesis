@@ -93,6 +93,9 @@
 \usepackage{graphicx}
 \usepackage[export]{adjustbox}
 
+\usepackage{microtype}
+\hyphenation{light-weight}
+
 \let\oldlooseness=\looseness
 \newcommand{\macro}[1]{\texttt{\textbackslash{}{#1}}}
 \newcommand{\renderer}[1]{\texttt{\textbackslash{}markdownRenderer{#1}}}
@@ -113,17 +116,17 @@
 This chapter briefly introduces Pandoc and the relevant parts of its architecture. It also introduces the \TeX{} and \LaTeX{} typeseting systems and finally the Markdown package, which works with both of these systems and which will be utilized to quickly produce a simple proof of concept for the Pandoc writer.
 
 \section{Pandoc}
-\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as \textsc{html}, docx, various Markdown flavours, \TeX{} formats like \LaTeX{} and Con\TeX{}t or roff for Unix manual pages. It consists of a core Haskell library and a command line tool providing access to this library. % Výstup konverzie je možné ovplyvniť pomocou \emph{filtrov}, čo sú používateľské programy, ktoré upravujú dokument počas konverzie. Pri konverzii do \TeX u má ale autor len obmedzené možnosti, ako ovplyvniť vzhľad výsledných dokumentov.
+\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as \textsc{html}, docx, various Markdown flavours, \TeX{} formats like \LaTeX{} and Con\TeX{}t, or roff for Unix manual pages. It consists of a core Haskell library and a command line tool providing access to this library.
 
 Internally, the conversion in Pandoc is performed in two phases. First, the input format is converted into a native represenation, also called an \emph{abstract syntax tree} (or \textsc{ast} for short). Then, this \textsc{ast} is converted into the output format. Such a design allows for the input format readers to be written as modules independent of individual output format writers, and vice versa. This also makes it easy to extend the set of Pandoc's supported formats.
 
 It should be noted that a support for a particular format doesn't have to be bidirectional. For example, Pandoc currently provides a Con\TeX{}t writer, but not a Con\TeX{}t reader. Thus, it is possible to implement a reader without a corresponding writer, and vice versa.
 
-The \textsc{ast} itself is exposed via a special format named \texttt{native}, which inputs and outputs the entire \textsc{ast} in Pandoc's internal Haskell representaion. Alternatively, the format \texttt{json} inputs and outputs the \textsc{ast} in the \textsc{json} format. % Keďže existujú rôzne knižnice v~jazyku Lua schopné parsovať formát \textsc{json},\footnote{Knižnica, ktorú naše rozšírenie využíva, je dostupná na \texttt{https://github.com/rxi/json.lua}.} je pre naše rozšírenie Markdownu táto reprezentácia vhodnejšia.
+The \textsc{ast} itself is exposed via a special format named \texttt{native}, which inputs and outputs the entire \textsc{ast} in Pandoc's internal Haskell representaion. Alternatively, the format \texttt{json} inputs and outputs the \textsc{ast} in the \textsc{json} format.
 
 \subsection{Usage}
 
-The simplest way to use Pandoc is through the provided command line utility. When no arguments are provided, Pandoc takes text formatted with Markdown from the standard input and outputs the \textsc{html} equivalent on the standard output:
+The simplest way to use Pandoc is through the provided command line utility. When no arguments are provided, Pandoc takes text formatted with the Markdown markup language from standard input and outputs the \textsc{html} equivalent on the standard output:
 
 $ $
 
@@ -189,27 +192,26 @@ $ $
 As an aside, for some output formats (like \LaTeX{}, \textsc{html} or \textit{roff} above), the default output produced by Pandoc does not constitute a complete document ready for viewing/typesetting, but rather just a short snippet. This can be amended by the \texttt{-{}-standalone} option (\texttt{-s}~for short), which surrounds the snippet with a template containing the skeleton of a full document. (Most of the templates are too long to reasonably embed an example of such an output here.)
 
 \section{\TeX{}}
-\emph{Shortly explain what \TeX{} is and how it differs from \LaTeX{}}.
+\textit{\textbf{(TOO DARING?)}} Here, I dare to presume more familiarity with \TeX{} and \LaTeX{} on the side of the reader than with Pandoc, so I will describe them only shortly.
+
+\TeX{} is a typesetting system designed and released by Donald Knuth in 1978. The ``language'' of \TeX{} functions on the basis of macro expansion -- during typesetting, all macros in the document are recursively expanded into so-called \textit{primitives}. The primitives are then processed by a specific \TeX{} engine -- of which there are multiple implementations -- and a document is assembled out of them.
+
+Since the primitives are fairly low-level and using them for creating documents would be cumbersome \textit{(too vague/casual?)}, several higher-level systems of macros have been built on top of \TeX{}. The most popular such system is \LaTeX{}, designed and written by Leslie Lamport and first released in 1984. In general, macros provided by \LaTeX{} provide abstractions that allow greater focus on content rather than formatting itself.
 
 \subsection{expl3 programming language for \TeX{}}
 \emph{expl3 deserves a mention because it greatly simplifies programming in \TeX{}.}
 
 \section{The Markdown package for \TeX{}}
-The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package provides the means to embed blocks of text written in the Markdown markup language directly into \TeX{} documents. During the typesetting process, these blocks are parsed and converted into Markdown's own set of intermediate macros, which are then expanded into native \TeX{} macros correspoding to the input.
+The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of easy readability. This has eventually caused wide adoption of the language on the Internet. The package provides a way to embed blocks of text written in the Markdown markup language directly into \TeX{} documents. During the typesetting process, these blocks are parsed and eventually expanded into native \TeX{}/\LaTeX{} macros correspoding to the input. 
 
-Markdown's parser originates from a Lua library called \emph{lunamark}~\cite{lunamark}, which is coincidentally also developed by John MacFarlane, the author of Pandoc. lunamark provides a fast conversion of Markdown (its only input format) into other commonly used markup languages, which include \LaTeX{} and Con\TeX{}t. Since Lua\TeX{} is able to run Lua code directly, lunamark's parser was suitable for its use in the Markdown package.
+Because Markdown offers first-class support for plain \TeX{}\footnote{Besides that, Markdown also supports Con\TeX{}t, another macro system on top of \TeX{}.} and already tackles the task of converting high-level Markdown elements into low-level \TeX{} macros, it was suitable for its use in a working prototype of the plain \TeX{} writer for Pandoc. That is, the writer can simply produce macros defined by Markdown, which can then be expanded into \TeX{} primitives even without the use of \LaTeX{}.
 
-% Rýchlosť konverzie bola jednou z~priorít pri vývoji lunamarku, a~preto konverzia neprebieha v~dvoch fázach (do medziformátu a~z~medziformátu) ako v~prípade Pandocu. Namiesto toho tu dochádza k~priamej komunikácii medzi dvomi modulmi, vstupným (reader) a~výstupným (writer). Výstupný modul implementuje funkcie, ktoré definujú reprezentáciu rôznych prvkov textu vo výstupnom formáte a~vstupný modul počas toho, ako parsuje vstupný dokument, zároveň aj zostavuje výstup s~pomocou funkcií výstupného modulu, ktoré priamo volá.
-
-% Tento princíp bol zachovaný aj v~Markdowne -- s~tým rozdielom, že existujúce výstupné moduly pre podporované formáty boli nahradené jedným, ktorý pre jednotlivé prvky textu generuje makrá \macro{markdownRenderer}\ldots. Tieto makrá je možné predefinovať a~tak upraviť štýl výstupu. Predvolenou hodnotou týchto makier sú makrá \macro{markdownRenderer\textrm{\ldots}Prototype}, ktoré expandujú na natívnu reprezentáciu príslušných prvkov systému \LaTeX{} (viď obr. \ref{fExample page from an \textsc{HTML} document typeset with the proof of concept}ig:markdown-ast} a~\ref{fig:markdown-renderers}).
-% \oldlooseness=-1
-
-\emph{Benefits: \LaTeX{} and Con\TeX{}t already supported!}
+Regarding usage, the main intended way to use the Markdown package with plain \TeX{} is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive and takes a filename as an argument, or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown text directly embedded into the document source. Since we're mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
 
 \subsection{Lunamark writer - a previously explored approach}
-Markdown's parser originates from a Lua library called \emph{lunamark}~\cite{lunamark}, which is coincidentally also developed by John MacFarlane, the author of Pandoc. lunamark provides a fast conversion of Markdown (its only input format) into other commonly used markup languages, which include \LaTeX{} and Con\TeX{}t. Since Lua\TeX{} is able to run Lua code directly, lunamark's parser was suitable for its use in the Markdown package.
+Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which is coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark provides a fast conversion of Markdown (its only input format) into other commonly used markup formats, which also include \LaTeX{}. Since Lua\TeX{} is able to run Lua code directly, Lunamark's parser was suitable for its use in the Markdown package.
 
-\emph{Mention the dean's project and what the "original" goal of it was, as well as why the goal eventually shifted (we found a better method).}
+Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc into the Markdown package. Such support allows users to embed blocks of all input formats, that are supported by Pandoc, into \TeX{}/\LaTeX{} documents. This would be done by extending Lunamark with a reader module for Pandoc \textsc{ast} (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before we \textbf{\textit{(who is we? Should I actually mention my supervisor here?)}} discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs Markdown macros, with a shim layer on top. (The details of this are all described in chapter 3). Eventually, it became clear that it is not necessary to extend Markdown with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be entirely reformulated.
 
 \section{Comparison of Pandoc and Markdown}
 
