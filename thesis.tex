@@ -95,6 +95,7 @@
 
 \usepackage{microtype}
 \hyphenation{light-weight}
+\hyphenation{con-struc-tors}
 
 \let\oldlooseness=\looseness
 \newcommand{\macro}[1]{\texttt{\textbackslash{}{#1}}}
@@ -116,17 +117,17 @@
 This chapter briefly introduces Pandoc and the relevant parts of its architecture. It also introduces the \TeX{} and \LaTeX{} typeseting systems and finally the Markdown package, which works with both of these systems and which will be utilized to quickly produce a simple proof of concept for the Pandoc writer.
 
 \section{Pandoc}
-\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as \textsc{html}, docx, various Markdown flavours, \TeX{} formats like \LaTeX{} and Con\TeX{}t, or roff for Unix manual pages. It consists of a core Haskell library and a command line tool providing access to this library.
+\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as HTML, docx, various Markdown flavours, some formats built for systems on top of \TeX{} (e.g. \LaTeX{} and Con\TeX{}t), or roff macros for Unix manual pages. It consists of a core library written in the Haskell language and a command line tool providing access to this library.
 
-Internally, the conversion in Pandoc is performed in two phases. First, the input format is converted into a native represenation, also called an \emph{abstract syntax tree} (or \textsc{ast} for short). Then, this \textsc{ast} is converted into the output format. Such a design allows for the input format readers to be written as modules independent of individual output format writers, and vice versa. This also makes it easy to extend the set of Pandoc's supported formats.
+Internally, the conversion in Pandoc is performed in two phases. First, the input format is converted into a native represenation, also called an \emph{abstract syntax tree} (or AST for short). Then, this AST is converted into the output format. Such a design allows for the input format readers to be written as modules independent of individual output format writers, and vice versa. This also makes it easy to extend the set of Pandoc's supported formats.
 
-It should be noted that a support for a particular format doesn't have to be bidirectional. For example, Pandoc currently provides a Con\TeX{}t writer, but not a Con\TeX{}t reader. Thus, it is possible to implement a reader without a corresponding writer, and vice versa.
+It should be noted that a support for a particular format does not have to be bidirectional. For example, Pandoc currently provides a Con\TeX{}t writer, but not a Con\TeX{}t reader. Thus, it is possible to implement a reader without a corresponding writer, and vice versa.
 
-The \textsc{ast} itself is exposed via a special format named \texttt{native}, which inputs and outputs the entire \textsc{ast} in Pandoc's internal Haskell representaion. Alternatively, the format \texttt{json} inputs and outputs the \textsc{ast} in the \textsc{json} format.
+The AST itself is exposed via a special format named \texttt{native}, which inputs and outputs the entire AST in Pandoc's internal Haskell representaion. Alternatively, the format \texttt{json} inputs and outputs the AST in the JSON format.
 
 \subsection{Usage}
 
-The simplest way to use Pandoc is through the provided command line utility. When no arguments are provided, Pandoc takes text formatted with the Markdown markup language from standard input and outputs the \textsc{html} equivalent on the standard output:
+The simplest way to use Pandoc is through the provided command line utility. When no arguments are provided, Pandoc takes text formatted with the Markdown markup language from standard input and outputs the HTML equivalent on the standard output:
 
 $ $
 
@@ -136,12 +137,12 @@ $ $
 
 $ $
 
-Other builtin formats for input and output can be specificied using the \texttt{-{}-from} and \texttt{-{}-to} options (\texttt{-f} and \texttt{-t} for short). Naturally, one can also specify names of the input and output files. For example, if we have the input file \textit{shopping-list.html} formatted using \textsc{html} with the following contents:
+Other builtin formats for input and output can be specificied using the \texttt{-{}-from} and \texttt{-{}-to} options (\texttt{-f} and \texttt{-t} for short). Naturally, one can also specify names of the input (argument without an option) and output (\texttt{-{}-output} or \texttt{-o}) files. For example, if we have the input file \textit{shopping-list.html} formatted using HTML with the following contents:
 
 $ $
 
 \noindent
-\texttt{<h3>Shooping list</h3>} \\
+\texttt{<h3>Shopping list</h3>} \\
 \texttt{<ul>} \\
 \texttt{    <li>Eggs</li>} \\
 \texttt{    <li>Onions</li>} \\
@@ -164,7 +165,7 @@ creates the output file \textit{shopping-list.1} with the following content, for
 $ $
 
 \noindent
-\texttt{.SS Shooping list} \\
+\texttt{.SS Shopping list} \\
 \texttt{.IP \textbackslash[bu] 2} \\
 \texttt{Eggs} \\
 \texttt{.IP \textbackslash[bu] 2} \\
@@ -174,9 +175,9 @@ $ $
 
 $ $
 
-If we want to define our own input/output format, we ultimately have two options. The first one is to directly extend the code of Pandoc itself with a new reader/writer module. This would require a knowledge of Haskell and Pandoc's codebase. Moreover, such a solution wouldn't be very portable, as to actually use such a module, a recompilation of Pandoc would be necessary. Of course, there's the possibility that Pandoc maintainers would consider the module worthy and of a sufficient quality (and the format significant enough) of inclusion into Pandoc's codebase. Even then, the format would only be available in new versions of Pandoc.
+If we want to define our own input/output format, we ultimately have two options. The first one is to directly extend the code of Pandoc itself with a new reader/writer module. This would require at least working knowledge Pandoc's codebase, as well as Haskell. Moreover, such a solution would not be very portable, as to actually use such a module, it would be necessary to recompile Pandoc. Of course, there is the possibility that Pandoc maintainers would consider the module worthy enough and of a sufficient quality (and the format significant enough) to include it into Pandoc itself. Even then, the format would only be available in new versions of Pandoc.
 
-The other option is to write a reader/writer in the Lua programming language using the supported Lua API, which is described in Pandoc's documentation\footnote{\url{https://pandoc.org/custom-writers.html}}. Then, if we simply use the path to the Lua reader/writer as an input/output format, Pandoc's built-in Lua interpreter will parse and use that reader/writer at runtime. For example, if we defined a plain \TeX{} writer in the file \texttt{plaintex.lua} and then wanted to use plain \TeX{} as the output format, it would be sufficient to call:
+The other option is to write a reader/writer in the Lua programming language using the supported Lua API, which is described in Pandoc's documentation\footnote{\url{https://pandoc.org/custom-writers.html}}. Then, if we simply use the path to the Lua reader/writer as an input/output format, Pandoc's built-in Lua interpreter will parse and use that reader/writer at runtime. For example, if we defined a plain \TeX{} writer in the file \texttt{plaintex.lua} and then wanted to use plain \TeX{} as the output format, it would be enough to call:
 
 $ $
 
@@ -189,29 +190,29 @@ We will construct such a writer in chapter 3.
 
 $ $
 
-As an aside, for some output formats (like \LaTeX{}, \textsc{html} or \textit{roff} above), the default output produced by Pandoc does not constitute a complete document ready for viewing/typesetting, but rather just a short snippet. This can be amended by the \texttt{-{}-standalone} option (\texttt{-s}~for short), which surrounds the snippet with a template containing the skeleton of a full document. (Most of the templates are too long to reasonably embed an example of such an output here.)
+As an aside, for some output formats (like \LaTeX{}, HTML or roff macros above), the default output produced by Pandoc does not constitute a complete document ready for viewing/typesetting, but rather just a short snippet. This can be amended by the \texttt{-{}-standalone} option (\texttt{-s}~for short), which surrounds the snippet with a template containing the skeleton of a full document. (Most of the templates are too long to reasonably embed an example of such an output here.)
 
 \section{\TeX{}}
 \textit{\textbf{(TOO DARING?)}} Here, I dare to presume more familiarity with \TeX{} and \LaTeX{} on the side of the reader than with Pandoc, so I will describe them only shortly.
 
 \TeX{} is a typesetting system designed and released by Donald Knuth in 1978. The ``language'' of \TeX{} functions on the basis of macro expansion -- during typesetting, all macros in the document are recursively expanded into so-called \textit{primitives}. The primitives are then processed by a specific \TeX{} engine -- of which there are multiple implementations -- and a document is assembled out of them.
 
-Since the primitives are fairly low-level and using them for creating documents would be cumbersome \textit{(too vague/casual?)}, several higher-level systems of macros have been built on top of \TeX{}. The most popular such system is \LaTeX{}, designed and written by Leslie Lamport and first released in 1984. In general, macros provided by \LaTeX{} provide abstractions that allow greater focus on content rather than formatting itself.
+Since the primitives are fairly low-level and using them for creating documents could be cumbersome \textit{(too vague/casual?)}, several higher-level systems of macros have been built on top of \TeX{}. The most popular such system is \LaTeX{}, designed and written by Leslie Lamport and first released in 1984. In general, macros provided by \LaTeX{} provide abstractions that allow greater focus on content rather than formatting itself.
 
 \subsection{expl3 programming language for \TeX{}}
 \emph{expl3 deserves a mention because it greatly simplifies programming in \TeX{}.}
 
 \section{The Markdown package for \TeX{}}
-The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of easy readability. This has eventually caused wide adoption of the language on the Internet. The package provides a way to embed blocks of text written in the Markdown markup language directly into \TeX{} documents. During the typesetting process, these blocks are parsed and eventually expanded into native \TeX{}/\LaTeX{} macros correspoding to the input. 
+The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of easy readability. This has eventually caused wide adoption of the language on the Internet. The package provides a way to embed blocks of text written in Markdown directly into \TeX{} documents. During typesetting, these blocks are parsed and eventually expanded into native \TeX{}/\LaTeX{} macros correspoding to the input. 
 
 Because Markdown offers first-class support for plain \TeX{}\footnote{Besides that, Markdown also supports Con\TeX{}t, another macro system on top of \TeX{}.} and already tackles the task of converting high-level Markdown elements into low-level \TeX{} macros, it was suitable for its use in a working prototype of the plain \TeX{} writer for Pandoc. That is, the writer can simply produce macros defined by Markdown, which can then be expanded into \TeX{} primitives even without the use of \LaTeX{}.
 
-Regarding usage, the main intended way to use the Markdown package with plain \TeX{} is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive and takes a filename as an argument, or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown text directly embedded into the document source. Since we're mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
+Regarding usage, the main intended way to use the Markdown package with plain \TeX{} is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive and takes a filename as an argument, or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown-formatted text directly embedded into the document source. Since we are mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
 
 \subsection{Lunamark writer - a previously explored approach}
-Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which is coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark provides a fast conversion of Markdown (its only input format) into other commonly used markup formats, which also include \LaTeX{}. Since Lua\TeX{} is able to run Lua code directly, Lunamark's parser was suitable for its use in the Markdown package.
+Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which is coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark provides a fast conversion of Markdown (its only input format) into other commonly used markup formats, which also include \LaTeX{}. Since the Lua\TeX{} engine is able to directly execute Lua code, Lunamark's parser was suitable for its use in the Markdown package.
 
-Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc into the Markdown package. Such support allows users to embed blocks of all input formats, that are supported by Pandoc, into \TeX{}/\LaTeX{} documents. This would be done by extending Lunamark with a reader module for Pandoc \textsc{ast} (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before we \textbf{\textit{(who is we? Should I actually mention my supervisor here?)}} discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs Markdown macros, with a shim layer on top. (The details of this are all described in chapter 3). Eventually, it became clear that it is not necessary to extend Markdown with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be entirely reformulated.
+Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc into the Markdown package. Such support allows users to embed blocks of all input formats, that are supported by Pandoc, into \TeX{}/\LaTeX{} documents. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before we \textbf{\textit{(who is we? Should I actually mention my supervisor here?)}} discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs Markdown's macros, with a shim layer on top. (The details of this are all described in chapter 3). Eventually, it became clear that it is not necessary to extend Markdown with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be entirely reformulated.
 
 \section{Comparison of Pandoc and Markdown}
 
@@ -222,7 +223,9 @@ Here it should be noted that the original goal of the thesis was to integrate th
 \item elements without equivalents in Markdown
 \end{itemize}
 
-An example of a Pandoc element with a straightforward mapping to Markdown macros would be \texttt{Emph}, which directly corresponds to the macro \renderer{Emphasis}. A few more elements have such equivalents, although in the case of \texttt{CodeBlock}, the order of its two parameters needs to be swapped:
+Elements of Pandoc's AST are somewhat similar to Markdown's macros for elements. Some of them are simple enough that it is possible to pass their contents to the corresponding macro -- that is, if they even have any.
+
+An example of such an element would be \texttt{Emph}, which directly corresponds to the macro \renderer{Emphasis}. There is a few more elements with such equivalents, although in the case of \texttt{CodeBlock}, the order of its two parameters needs to be swapped:
 
 \begin{itemize}
 \item \texttt{Emph} $\rightarrow$ \renderer{Emphasis}
@@ -234,9 +237,11 @@ An example of a Pandoc element with a straightforward mapping to Markdown macros
 \item \texttt{CodeBlock} $\rightarrow$ \renderer{InputFencedCode}
 \end{itemize}
 
-For other elements, the mapping to Markdown macros is a bit more complicated. \emph{(TODO)}
+For other elements, the mapping to Markdown's macros is a bit more complicated. \emph{(TODO)}
 
-Some Pandoc elements take a parameter of a type with multiple constant constructors. (In imperative languages, the closest equivalent would be an enumerable type.) For example, one of the parameters of \texttt{Cite} is of the type \texttt{CitationMode}, which itself has three constructors without parameters - \texttt{AuthorInText}, \texttt{SuppressAuthor} and \texttt{NormalCitation}. Another example would be \texttt{QuoteType} passed as a parameter of \texttt{Quoted} with two constructors, \texttt{SingleQuote} and \texttt{DoubleQuote} - although \texttt{Quoted} has no equivalents among Markdown macros.
+Some Pandoc elements take a parameter of a type with multiple constant constructors. (In imperative languages, the closest equivalent would be an enumerable type.) For example, one of the parameters of \texttt{Cite} is of the type \texttt{CitationMode}, which itself has three constructors without parameters - \texttt{AuthorInText}, \texttt{SuppressAuthor} and \texttt{NormalCitation}. Another example would be \texttt{MathType} passed as a parameter of \texttt{Math} with two constructors, \texttt{DisplayMath} and \texttt{InlineMath}\footnote{In this case, the API for custom Pandoc writers splits handling of \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}. Depending on the value of \texttt{MathType}, Pandoc simply calls one of these two functions.}. Similarly, \texttt{Quoted} has a parameter \texttt{QuoteType} with two constructors, \texttt{SingleQuote} and \texttt{DoubleQuote}\footnote{Again, \texttt{Quoted} the API splits into two functions, \texttt{SingleQuote} and \texttt{DoubleQuote}.} - although \texttt{Quoted} has no equivalent among Markdown's macros.
+
+Other elements are simply represented differently in Markdown. For example, the element \texttt{Header} contains its contents and an integer representing its level. (This maps nicely to the HTML tags \texttt{<h1>} to \texttt{<h6>}.) Markdown represents this using six individual macros, \renderer{HeadingOne} to \renderer{HeadingSix}.
 
 \emph{(TODO - more?)}
 
@@ -254,7 +259,7 @@ Finally, there is a group of elements without any corresponding macros, like the
       child { node (exclamation) {\texttt{Str "!"}} edge from parent[->, gray]
     };
   \end{tikzpicture}
-  \caption{A graphical Pandoc \textsc{ast} representation for the Markdown input ``\texttt{Hello *Markdown*!}''}
+  \caption{A graphical representation of Pandoc's AST for the Markdown input ``\texttt{Hello *Markdown*!}''}
   \label{fig:pandoc-ast}
 \end{figure}
 
@@ -301,7 +306,7 @@ Finally, there is a group of elements without any corresponding macros, like the
     \end{enumerate}
   \end{multicols}
   \vspace*{-1em}
-  \caption{Complete list of Pandoc \textsc{ast} elements (as of Pandoc 2.14.2)}
+  \caption{Complete list of elements of Pandoc's AST (as of Pandoc 2.14.2)}
   \label{fig:pandoc-elems}
 \end{figure}
 
@@ -467,7 +472,7 @@ Finally, there is a group of elements without any corresponding macros, like the
 \emph{maybe nějaký veselý historky z natáčení (shellesc, pandocInput, jak pejsek s kočičkou spustili Pandoc z TeXu, codeBlocks v samostatných súboroch + auxdir (haha) etc.)}
 
 \section{Example documents}
-\emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \label{fig:html-browsers-typeset} \textbf{Consider if this shouldn't be a separate chapter.}}
+\emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \label{fig:html-browsers-typeset} \textbf{Consider if this should not be a separate chapter.}}
 
 % \includepdf[pages={1}]{pandoc-to-markdown/examples/html-browsers.pdf}
 
