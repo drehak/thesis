@@ -114,10 +114,10 @@
 \emph{Outline the goals of my thesis and the motivations behind them.}
 
 \chapter{State of the art}
-This chapter briefly introduces Pandoc and the relevant parts of its architecture. It also introduces the \TeX{} and \LaTeX{} typeseting systems and finally the Markdown package, which works with both of these systems and which will be utilized to quickly produce a simple proof of concept for the Pandoc writer.
+This chapter briefly introduces Pandoc and the relevant parts of its architecture. It also introduces the \TeX{} and \LaTeX{} typesetting systems and finally the Markdown package, which works with both of these systems and which will be utilized to quickly produce a simple proof of concept for the Pandoc writer.
 
 \section{Pandoc}
-\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as HTML, docx, various Markdown flavours, some formats built for systems on top of \TeX{} (e.g. \LaTeX{} and Con\TeX{}t), or roff macros for Unix manual pages. It consists of a core library written in the Haskell language and a command line tool providing access to this library.
+\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as HTML, docx, various Markdown flavours, some formats built for systems on top of \TeX{} (e.g. \LaTeX{} and Con\TeX{}t), or roff macros for Unix manual pages. Pandoc consists of a core library written in the Haskell language and a command line tool providing access to this library.
 
 Internally, the conversion in Pandoc is performed in two phases. First, the input format is converted into a native represenation, also called an \emph{abstract syntax tree} (or AST for short). Then, this AST is converted into the output format. Such a design allows for the input format readers to be written as modules independent of individual output format writers, and vice versa. This also makes it easy to extend the set of Pandoc's supported formats.
 
@@ -151,6 +151,7 @@ $ $
 
 $ $
 
+\noindent
 then the following command:
 
 $ $
@@ -160,6 +161,7 @@ $ $
 
 $ $
 
+\noindent
 creates the output file \textit{shopping-list.1} with the following content, formatted using macros of the \textit{roff} typesetting system used for Unix manual pages:
 
 $ $
@@ -186,7 +188,7 @@ $ $
 
 $ $
 
-We will construct such a writer in chapter 3.
+We will construct such a writer in Chapter 3.
 
 $ $
 
@@ -203,13 +205,13 @@ Since the primitives are fairly low-level and using them for creating documents 
 \emph{expl3 deserves a mention because it greatly simplifies programming in \TeX{}.}
 
 \section{The Markdown package for \TeX{}}
-The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of easy readability. This has eventually caused wide adoption of the language on the Internet. The package provides a way to embed blocks of text written in Markdown directly into \TeX{} documents. During typesetting, these blocks are parsed and eventually expanded into native \TeX{}/\LaTeX{} macros correspoding to the input. 
+The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of easy readability. This has eventually caused wide adoption of the language on the Internet. The Markdown package provides a way to embed blocks of text written in the Markdown language directly into \TeX{} documents. During typesetting, these blocks are parsed and eventually expanded into native \TeX{}/\LaTeX{} macros correspoding to the input. 
 
-Because Markdown offers first-class support for plain \TeX{}\footnote{Besides that, Markdown also supports Con\TeX{}t, another macro system on top of \TeX{}.} and already tackles the task of converting high-level Markdown elements into low-level \TeX{} macros, it was suitable for its use in a working prototype of the plain \TeX{} writer for Pandoc. That is, the writer can simply produce macros defined by Markdown, which can then be expanded into \TeX{} primitives even without the use of \LaTeX{}.
+Because the Markdown package offers first-class support for plain \TeX{}\footnote{Besides that, Markdown also supports Con\TeX{}t, another macro system on top of \TeX{}.} and already tackles the task of converting high-level Markdown elements into low-level \TeX{} macros, it was suitable for its use in a working prototype of the plain \TeX{} writer for Pandoc. That is, the writer can simply produce macros defined by the Markdown package, which can then be expanded into \TeX{} primitives even without the use of \LaTeX{}.
 
 Regarding usage, the main intended way to use the Markdown package with plain \TeX{} is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive and takes a filename as an argument, or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown-formatted text directly embedded into the document source. Since we are mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
 
-\subsection{Lunamark writer - a previously explored approach}
+\subsection{Lunamark writer -- a previously explored approach}
 Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which is coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark provides a fast conversion of Markdown (its only input format) into other commonly used markup formats, which also include \LaTeX{}. Since the Lua\TeX{} engine is able to directly execute Lua code, Lunamark's parser was suitable for its use in the Markdown package.
 
 Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc into the Markdown package. Such support allows users to embed blocks of all input formats, that are supported by Pandoc, into \TeX{}/\LaTeX{} documents. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before we \textbf{\textit{(who is we? Should I actually mention my supervisor here?)}} discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs Markdown's macros, with a shim layer on top. (The details of this are all described in chapter 3). Eventually, it became clear that it is not necessary to extend Markdown with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be entirely reformulated.
@@ -239,7 +241,7 @@ An example of such an element would be \texttt{Emph}, which directly corresponds
 
 For other elements, the mapping to Markdown's macros is a bit more complicated. \emph{(TODO)}
 
-Some Pandoc elements take a parameter of a type with multiple constant constructors. (In imperative languages, the closest equivalent would be an enumerable type.) For example, one of the parameters of \texttt{Cite} is of the type \texttt{CitationMode}, which itself has three constructors without parameters - \texttt{AuthorInText}, \texttt{SuppressAuthor} and \texttt{NormalCitation}. Another example would be \texttt{MathType} passed as a parameter of \texttt{Math} with two constructors, \texttt{DisplayMath} and \texttt{InlineMath}\footnote{In this case, the API for custom Pandoc writers splits handling of \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}. Depending on the value of \texttt{MathType}, Pandoc simply calls one of these two functions.}. Similarly, \texttt{Quoted} has a parameter \texttt{QuoteType} with two constructors, \texttt{SingleQuote} and \texttt{DoubleQuote}\footnote{Again, \texttt{Quoted} the API splits into two functions, \texttt{SingleQuote} and \texttt{DoubleQuote}.} - although \texttt{Quoted} has no equivalent among Markdown's macros.
+Some Pandoc elements take a parameter of a type with multiple constant constructors. (In imperative languages, the closest equivalent would be an enumerable type.) For example, one of the parameters of \texttt{Cite} is of the type \texttt{CitationMode}, which itself has three constructors without parameters - \texttt{AuthorInText}, \texttt{SuppressAuthor} and \texttt{NormalCitation}. Another example would be \texttt{MathType} passed as a parameter of \texttt{Math} with two constructors, \texttt{DisplayMath} and \texttt{InlineMath}\footnote{In this case, the API for custom Pandoc writers splits handling of \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}. Depending on the value of \texttt{MathType}, Pandoc simply calls one of these two functions.}. Similarly, \texttt{Quoted} has a parameter \texttt{QuoteType} with two constructors, \texttt{SingleQuote} and \texttt{DoubleQuote}\footnote{Again, \texttt{Quoted} the API splits into two functions -- \texttt{SingleQuote} and \texttt{DoubleQuote}.} -- although \texttt{Quoted} has no equivalent among Markdown's macros.
 
 Other elements are simply represented differently in Markdown. For example, the element \texttt{Header} contains its contents and an integer representing its level. (This maps nicely to the HTML tags \texttt{<h1>} to \texttt{<h6>}.) Markdown represents this using six individual macros, \renderer{HeadingOne} to \renderer{HeadingSix}.
 
@@ -498,7 +500,7 @@ Finally, there is a group of elements without any corresponding macros, like the
 
 There are currently two styles of defining custom writers for Pandoc, to which the Pandoc documentation refers to as ``classic'' and ``new''. The main difference between them is that the classic style writer defines its rendering functions on the top level, while in the new style, everything is processed through a top-level function named \texttt{Writer} which contains all the custom writer logic.
 
-For the plain \TeX{} writer, I have decided to go with the classic style. There were multiple reasons for this, the main one being that the classic style is what Pandoc's documentation covers. Another reason is that support for the new style was only introduced in Pandoc 2.18\footnote{The Pandoc documentation actually states that the new style of custom writers was introduced in 2.17.2. This is wrong. No such version was even released, 2.17.1.1 was immediately followed by 2.18.}, which was released in January 2022. Repositories of several high-profile Linux distributions ship versions of Pandoc that are way older than that - for instance, Fedora 37 released in November 2022 provides only packages with Pandoc 2.14.0.3\footnote{\url{https://packages.fedoraproject.org/pkgs/pandoc/pandoc/fedora-37.html}}, which was released in June 2021. Another example is Ubuntu 22.04 LTS (codenamed ``Jammy Jellyfish''), which, despite being released in April 2022, still ships Pandoc 2.9.2.1\footnote{\url{https://packages.ubuntu.com/jammy/pandoc}} from March 2020.
+For the plain \TeX{} writer, I have decided to go with the classic style. There were multiple reasons for this, the main one being that the classic style is what Pandoc's documentation covers. Another reason is that support for the new style was only introduced in Pandoc 2.18\footnote{The Pandoc documentation actually states that the new style of custom writers was introduced in 2.17.2. This is wrong. No such version was even released, 2.17.1.1 was immediately followed by 2.18.}, which was released in January 2022. Repositories of several high-profile Linux distributions ship versions of Pandoc that are way older than that. For instance, Fedora 37 released in November 2022 provides only packages with Pandoc 2.14.0.3\footnote{\url{https://packages.fedoraproject.org/pkgs/pandoc/pandoc/fedora-37.html}}, which was released in June 2021. Another example is Ubuntu 22.04 LTS (codenamed ``Jammy Jellyfish''), which, despite being released in April 2022, still ships Pandoc 2.9.2.1\footnote{\url{https://packages.ubuntu.com/jammy/pandoc}} from March 2020.
 
 Unbeknownst to me at the time, classic custom writers were going to be deprecated. According to the discussion on the related pull request\footnote{\url{https://github.com/jgm/pandoc/pull/8343}}, it will still be possible to update a classic writer to a new-style one. However, other breaking changes might still be introduced. As long as the plain \TeX{} writer is an external one instead of being built into Pandoc itself, it will have to deal with this in the future.
 
