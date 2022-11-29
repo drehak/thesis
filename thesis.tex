@@ -132,48 +132,60 @@ The simplest way to use Pandoc is through the provided command line utility. Whe
 $ $
 
 \noindent
-\texttt{\$ echo 'Hello *world*!' | pandoc} \\
-\texttt{<p>Hello <em>world</em>!</p>}
+\begin{lstlisting}
+$ echo 'Hello *world*!' | pandoc
+<p>Hello <em>world</em>!</p>
+\end{lstlisting}
 
 $ $
 
-Other builtin formats for input and output can be specificied using the \texttt{-{}-from} and \texttt{-{}-to} options (\texttt{-f} and \texttt{-t} for short). Naturally, one can also specify names of the input (argument without an option) and output (\texttt{-{}-output} or \texttt{-o}) files. For example, if we have the input file \textit{shopping-list.html} formatted using HTML with the following contents:
-
-$ $
-
-\noindent
-\texttt{<h3>Shopping list</h3>} \\
-\texttt{<ul>} \\
-\texttt{    <li>Eggs</li>} \\
-\texttt{    <li>Onions</li>} \\
-\texttt{    <li>Butter</li>} \\
-\texttt{</ul>}
+Other builtin formats for input and output can be specificied using the \texttt{-{}-from} and \texttt{-{}-to} options (\texttt{-f} and \texttt{-t} for short). Naturally, one can also specify names of the input (argument without an option) and output (\texttt{-{}-output} or \texttt{-o}) files. For example, suppose we have the input file \textit{shopping-list.html} formatted using HTML with the following contents:
 
 $ $
 
 \noindent
-then the following command:
+\lstset{language=HTML}
+\begin{lstlisting}
+<h3>Shopping list</h3>
+<ul>
+    <li>Eggs</li>
+    <li>Onions</li>
+    <li>Butter</li>
+    <li>Bread</li>
+</ul>
+\end{lstlisting}
 
 $ $
 
 \noindent
-\texttt{pandoc -f html -t man shopping-list.html -o shopping-list.1}
+Then, the following command will the output file \textit{shopping-list.1} formatted using macros of the \textit{roff} typesetting system used for Unix manual pages:
 
 $ $
 
 \noindent
-creates the output file \textit{shopping-list.1} with the following content, formatted using macros of the \textit{roff} typesetting system used for Unix manual pages:
+\lstset{language=}
+\begin{lstlisting}
+pandoc -f html -t man shopping-list.html -o shopping-list.1
+\end{lstlisting}
 
 $ $
 
 \noindent
-\texttt{.SS Shopping list} \\
-\texttt{.IP \textbackslash[bu] 2} \\
-\texttt{Eggs} \\
-\texttt{.IP \textbackslash[bu] 2} \\
-\texttt{Onions} \\
-\texttt{.IP \textbackslash[bu] 2} \\
-\texttt{Butter}
+The contents of the output file \textit{shopping-list.1} will be:
+
+$ $
+
+\noindent
+\begin{lstlisting}
+.SS Shopping list
+.IP \[bu] 2
+Eggs
+.IP \[bu] 2
+Onions
+.IP \[bu] 2
+Butter
+\end{lstlisting}
+% \] % vim: stop highlighting an equation
 
 $ $
 
@@ -184,7 +196,9 @@ The other option is to write a reader/writer in the Lua programming language usi
 $ $
 
 \noindent
-\texttt{\$ echo 'Hello *world*!' | pandoc -t plaintex.lua} \\
+\begin{lstlisting}
+$ echo 'Hello *world*!' | pandoc -t plaintex.lua
+\end{lstlisting}
 
 $ $
 
