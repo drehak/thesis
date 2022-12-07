@@ -496,8 +496,22 @@ In this chapter, I will describe how the proof of concept for the plain \TeX{} w
 
 \section{The custom Pandoc writer itself}
 \emph{
-This section will describe pandoc-to-markdown.lua.
+This section describes pandoc-to-markdown.lua.
 }
+
+As described in chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \texttt{pandoc-to-markdown.lua}, which is also its name in the proof of concept.
+
+For each AST element type, the writer defines a pure function that outputs the element in the output format. If the element has any child elements, they have already been processed by other functions by the time they are passed as arguments. Therefore, it is not necessary to implement the recursive descent manually.
+
+Internally, Pandoc splits elements into two groups of inline elements and block elements. As the name suggets, block elements appear as vertically separate blocks in the document (e.g. paragraphs, lists or tables), while inline elements can occur inside a line of text - which is generally a block element. This distinction does not matter for the user, perhaps not even the author of a custom writer. However, it constrains which elements can appear in others - for each child element, it is specified whether it's a block element or an inline element. Generally, block elements can contain block elements or inline elements, while inline elements can only contain other inline elements.\footnote{The one exception to this is Note, which represents a footnote or an endnote and its contents are represented as a list of block elements. However, these elements appear outside the parent element of the note, such as the contents of this footnote.}
+
+I have reordered the functions in \texttt{pandoc-to-markdown.lua} so that they appear in the same order in which they are defined in Pandoc\footnote{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}. Nevertheless, since inline elements are structurally simpler and cannot contain block elements, I will describe them first.
+
+\subsection{Inline elements}
+
+\subsection{Block elements}
+
+\subsection{Escaping special characters}
 
 \section{\TeX{} macropackage surrounding the writer}
 \emph{
