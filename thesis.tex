@@ -117,7 +117,7 @@
 This chapter briefly introduces Pandoc and the relevant parts of its architecture. It also introduces the \TeX{} and \LaTeX{} typesetting systems and finally the Markdown package, which works with both of these systems and which will be utilized to quickly produce a simple proof of concept for the Pandoc writer.
 
 \section{Pandoc}
-\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as HTML, docx, various Markdown flavours, some formats built for systems on top of \TeX{} (e.g. \LaTeX{} and Con\TeX{}t), or roff macros for Unix manual pages. Pandoc consists of a core library written in the Haskell language and a command line tool providing access to this library.
+\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as HTML, docx, various Markdown flavours, some \TeX{} formats (e.g. \LaTeX{} and Con\TeX{}t), or roff macros for Unix manual pages. Pandoc consists of a core library written in the Haskell language and a command line tool providing access to this library.
 
 Internally, the conversion in Pandoc is performed in two phases. First, the input format is converted into a native represenation, also called an \emph{abstract syntax tree} (or AST for short). Then, this AST is converted into the output format. Such a design allows for the input format readers to be written as modules independent of individual output format writers, and vice versa. This also makes it easy to extend the set of Pandoc's supported formats.
 
@@ -209,17 +209,30 @@ $ $
 As an aside, for some output formats (like \LaTeX{}, HTML or roff macros above), the default output produced by Pandoc does not constitute a complete document ready for viewing/typesetting, but rather just a short snippet. This can be amended by the \texttt{-{}-standalone} option (\texttt{-s}~for short), which surrounds the snippet with a template containing the skeleton of a full document. (Most of the templates are too long to reasonably embed an example of such an output here.)
 
 \section{\TeX{}}
-\TeX{} is a typesetting system designed and released by Donald Knuth in 1978. The ``language'' of \TeX{} functions on the basis of macro expansion -- during typesetting, all macros in the document are recursively expanded into so-called \textit{primitives}. The primitives are then processed by a specific \TeX{} engine -- of which there are multiple implementations -- and a document is assembled out of them.
+\TeX{} is a typesetting system designed and released by Donald Knuth in 1978. One of the main motivations for the creation of \TeX{} was the difficulty surrounding typesetting of mathematics at the time of its inception. \textit{(something else?)}
 
-\textit{(\textbf{DESCRIBE MORE.} (\TeX{}book chapters 7, 8; \TeX{}book naruby))}
+The input files of \TeX{} are plain text and their main elements are text to be typeset and control sequences, which influence how the text is to be typeset. 
+Control sequences begin with their identifier, which consists of a backslash and a sequence of letters (uppercase or lowercase). Additionally, some control sequences take one or more of following tokens as parameters. The \TeX{} engine itself has around 300 of built-in control sequences, so-called \textit{primitives}.
 
-Since the primitives are fairly low-level and using them for creating documents could be cumbersome \textit{(too vague/casual?)}, several higher-level systems of macros have been built on top of \TeX{}. The most popular such system is \LaTeX{}, designed and written by Leslie Lamport and first released in 1984. In general, macros provided by \LaTeX{} provide abstractions that allow greater focus on content rather than formatting itself.
+An example of a primitive is \macro{end}, which is used for halting the \TeX{} engine and which takes no parameters. Another example is the primitive \macro{kern}, which inserts a blank fill of a given length. When the \TeX{} engine encounters \texttt{\textbackslash{}kern1em}, it inserts a blank fill, which is 1em wide.
 
-\subsection{expl3 programming language for \TeX{}}
-\emph{expl3 deserves a mention because it greatly simplifies programming in \TeX{}.}
+Besides primitives, there can also be \textit{macros}, which are control sequences that recursively expand into other control sequences and groups of characters. Macros can be defined using the sequence \macro{def}, which can happen directly in the input file, or in a \textit{format}, which is essentially a collection of definitions in a single file. Knuth himself has defined such a format called \textit{plain \TeX{}} as the default format for \TeX{}.
+
+An example of a macro is \macro{quad}, which is defined in plain \TeX{} as follows:
+
+\noindent
+\begin{lstlisting}
+\def\enspace{\kern.5em}
+\end{lstlisting}
+
+When the macro is defined (e.g. by loading the format) and \macro{quad} is encountered by the \TeX{} engine, it is expanded into \texttt{\textbackslash{}kern.5em}. This results in a 0.5em wide blank fill as outlined above.
+
+Several formats have been created specifically to provide abstractions above plain \TeX{} that allow greater focus on content rather than formatting itself, since plain \TeX{} can be cumbersome for creating documents. The most popular such system is \LaTeX{}, first released in 1984.
+
+There exist multiple compatible implementations of the \TeX{} engine, some of which also implement their own primitives. An example is pdf\TeX{}, which is capable of direct output to PDF and also provides primitives for micro-typography. Another example is Lua\TeX{}, which will be of interest in chapter 3, since it is able to directly execute code written in the Lua language.
 
 \section{The Markdown package for \TeX{}}
-The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of easy readability. This has eventually caused wide adoption of the language on the Internet. The Markdown package provides a way to embed blocks of text written in the Markdown language directly into \TeX{} documents. During typesetting, these blocks are parsed and eventually expanded into native \TeX{} macros correspoding to the input. 
+The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of being easy to read and write. This has eventually caused wide adoption of the language on the Internet. The Markdown package provides a way to embed blocks of text written in the Markdown language directly into \TeX{} documents. During typesetting, these blocks are parsed and eventually expanded into native \TeX{} macros correspoding to the input. 
 
 Because the Markdown package offers first-class support for plain \TeX{} and already tackles the task of converting high-level Markdown elements into low-level \TeX{} macros, it was suitable for its use in a working prototype of the plain \TeX{} writer for Pandoc. That is, the writer can simply produce macros defined by the Markdown package, which can then be expanded into \TeX{} primitives.
 
@@ -479,13 +492,25 @@ Finally, there is a group of elements without any corresponding macros, like the
 \end{figure}
 
 \chapter{Implementation}
-\emph{Outline the chapter.}
+In this chapter, I will describe how the proof of concept for the plain \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
 
 \section{The custom Pandoc writer itself}
+\emph{
+This section will describe pandoc-to-markdown.lua.
+}
+
 \section{\TeX{} macropackage surrounding the writer}
+\emph{
+This section will describe pandoc-to-markdown.tex, as well as pandoc-to-markdown.sty.
+}
+
 \subsection{pandoc... macros}
-\subsection{pandocInput, shellesc/write18 etc.}
-\emph{maybe nějaký veselý historky z natáčení (shellesc, pandocInput, jak pejsek s kočičkou spustili Pandoc z TeXu, codeBlocks v samostatných súboroch + auxdir (haha) etc.)}
+\emph{
+Describe the set of macros that was implemented. Maybe it's worth it to also describe the \LaTeX{} overrides.
+}
+
+\subsection{Caveats}
+\emph{maybe nějaký veselý historky z natáčení (shellesc/write18, pandocInput, jak pejsek s kočičkou spustili Pandoc z TeXu, codeBlocks v samostatných súboroch + auxdir (haha) etc.)}
 
 \section{Example documents}
 \emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \label{fig:html-browsers-typeset} \textbf{Consider if this should not be a separate chapter.}}
