@@ -85,10 +85,11 @@
   stringstyle     = \color{teal},
   commentstyle    = \itshape\color{magenta},
   breaklines      = true,
+  columns         = fullflexible,
 }
 \usepackage{floatrow} %% Putting captions above tables
 \floatsetup[table]{capposition=top}
-\usepackage[babel]{csquotes} %% Context-sensitive quotation marks
+% \usepackage[babel]{csquotes} %% Context-sensitive quotation marks
 \usepackage{pdfpages}
 \usepackage{graphicx}
 \usepackage[export]{adjustbox}
@@ -496,19 +497,92 @@ Finally, there is a group of elements without any corresponding macros, like the
 In this chapter, I will describe how the proof of concept for the plain \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
 
 \section{The custom Pandoc writer itself}
-\emph{
-This section describes pandoc-to-markdown.lua.
-}
-
 As described in chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \texttt{pandoc-to-markdown.lua}, which is also its name in the proof of concept.
 
 For each AST element type, the writer defines a pure function that outputs the element in the output format. If the element has any child elements, they have already been processed by other functions by the time they are passed as arguments. Therefore, it is not necessary to implement the recursive descent manually.
 
-Internally, Pandoc splits elements into two groups of inline elements and block elements. As the name suggets, block elements appear as vertically separate blocks in the document (e.g. paragraphs, lists or tables), while inline elements can occur inside a line of text - which is generally a block element. This distinction does not matter for the user, perhaps not even the author of a custom writer. However, it constrains which elements can appear in others - for each child element, it is specified whether it's a block element or an inline element. Generally, block elements can contain block elements or inline elements, while inline elements can only contain other inline elements.\footnote{The one exception to this is Note, which represents a footnote or an endnote and its contents are represented as a list of block elements. However, these elements appear outside the parent element of the note, such as the contents of this footnote.}
+Functions in \texttt{pandoc-to-markdown.lua} return macros of the form \macro{pandocElementName}, similarly to the Markdown package with its \renderer{ElementName}. These macros are defined in the \texttt{pandoc-to-markdown.tex} file. This allows the user to change the appearance of elements by simply redefining the macros on the \TeX{} side.\footnote{The proof of concept actually uses this in \texttt{pandoc-to-markdown.sty} to redefine some macros with equivalent \LaTeX{} constructs.} It also results in a somewhat cleaner implementation, since the style of all elements is defined in a single \TeX{} file. \textit{(reformulate?)}
 
-I have reordered the functions in \texttt{pandoc-to-markdown.lua} so that they appear in the same order in which they are defined in Pandoc\footnote{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}. Nevertheless, since inline elements are structurally simpler and cannot contain block elements, I will describe them first.
+Internally, Pandoc splits elements into two groups of inline elements and block elements. As the name suggets, block elements appear as vertically separate blocks in the document (e.g. paragraphs, lists or tables), while inline elements can occur inside a line of text - which is generally a block element. This distinction does not matter for the user, perhaps not even the author of a custom writer. However, it constrains which elements can appear in others - for each child element, it is specified whether it's a block element or an inline element. Generally, block elements can contain block elements or inline elements, while inline elements can only contain other inline elements.\footnote{The one exception to this is \texttt{Note}, which represents a footnote or an endnote and its contents are represented as a list of block elements. However, these elements appear outside the parent element of the note, such as the contents of this footnote.}
+
+I have reordered the functions in \texttt{pandoc-to-markdown.lua} so that they appear in the same order in which they are defined in Pandoc\footnote{\url{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}}. Nevertheless, since inline elements are structurally simpler and cannot contain block elements, I will describe them first.
 
 \subsection{Inline elements}
+
+The first inline element is \texttt{Str}, which simply defines a string without spaces. A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}. To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters, for example \renderer{Backslash}, the occurences of these characters will be replaced with their respective macros. (It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \macro{pandocBackslash\{\}}. This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings - for HTML, of course:
+
+$ $
+
+\noindent
+\lstset{language=[5.2]Lua}
+\begin{lstlisting}
+local function escape(s, in_attribute)
+  return s:gsub('[<>&"\']',
+    function(x)
+      if x == '<' then
+        return '&lt;'
+      elseif x == '>' then
+        return '&gt;'
+      elseif x == '&' then
+        return '&amp;'
+      elseif in_attribute and x == '"' then
+        return '&quot;'
+      elseif in_attribute and x == "'" then
+        return '&#39;'
+      else
+        return x
+      end
+    end)
+end
+\end{lstlisting}
+
+$ $
+
+There is a problem with this construct -- \texttt{gsub} replaces all occurences of the given characters in \texttt{s}. However, if the modified function for plain \TeX{} output would in this way replace \texttt{\{} with \texttt{\textbackslash{}pandocLeftBrace\{\}}, this would generate another occurence of \texttt{\{}, which would also get replaced with \texttt{\textbackslash{}pandocLeftBrace\{\}}\dots and so on. This can be mitigated by saving the substitution into a variable and returning it at the end of the inner function. (Some characters in the pattern provided to \texttt{gsub} have to be escaped with \%.)
+
+$ $
+
+\noindent
+\lstset{language=[5.2]Lua}
+\begin{lstlisting}
+local function escape(s)
+  s = string.gsub(s, "[\\{}%|_#&~%^%%%$]", function(c)
+    local s
+    if     c == "&"  then s = "\\pandocAmpersand{}"
+    elseif c == "\\" then s = "\\pandocBackslash{}"
+    elseif c == "^"  then s = "\\pandocCircumflex{}"
+    elseif c == "$"  then s = "\\pandocDollarSign{}"
+    elseif c == "#"  then s = "\\pandocHash{}"
+    elseif c == "{"  then s = "\\pandocLeftBrace{}"
+    elseif c == "%"  then s = "\\pandocPercentSign{}"
+    elseif c == "|"  then s = "\\pandocPipe{}"
+    elseif c == "}"  then s = "\\pandocRightBrace{}"
+    elseif c == "~"  then s = "\\pandocTilde{}"
+    elseif c == "_"  then s = "\\pandocUnderscore{}"
+    else                  s = c
+    end
+    return s
+  end)
+  return s
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+The function for \texttt{Str} itself is same as in the sample writer.
+
+$ $
+
+\noindent
+\lstset{language=[5.2]Lua}
+\begin{lstlisting}
+function Str(s)
+  return escape(s)
+end
+\end{lstlisting}
+
+$ $
 
 \subsection{Block elements}
 
