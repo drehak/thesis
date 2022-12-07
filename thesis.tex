@@ -278,7 +278,7 @@ Finally, there is a group of elements without any corresponding macros, like the
 
 \begin{figure}
   \centering
-  \begin{tikzpicture}[->, anchor=base, baseline, sibling distance=2.5cm]
+  \begin{tikzpicture}[->, anchor=base, baseline, sibling distance=2.5cm, level distance=1.35cm]
     \node (pdpara) {\texttt{Para}}
       child { node (pdstrhello) {\texttt{Str "Hello"}} edge from parent[->, gray] }
       child { node (pdspace) {\texttt{Space}} edge from parent[->, gray] }
@@ -292,56 +292,9 @@ Finally, there is a group of elements without any corresponding macros, like the
   \label{fig:pandoc-ast}
 \end{figure}
 
-% Prvky Pandocu prevzaté z dokumentácie: \textsf{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}
-
 \begin{figure}
   \centering
-  \begin{multicols}{3}
-    \begin{enumerate}
-      \item \texttt{Plain}
-      \item \texttt{Para}
-      \item \texttt{LineBlock}
-      \item \texttt{CodeBlock}
-      \item \texttt{RawBlock}
-      \item \texttt{BlockQuote}
-      \item \texttt{OrderedList}
-      \item \texttt{BulletList}
-      \item \texttt{DefinitionList}
-      \item \texttt{Header}
-      \item \texttt{HorizontalRule}
-      \item \texttt{Table}
-      \item \texttt{Div}
-      \item \texttt{Null}
-      \item \texttt{Str}
-      \item \texttt{Emph}
-      \item \texttt{Underline}
-      \item \texttt{Strong}
-      \item \texttt{Strikeout}
-      \item \texttt{Superscript}
-      \item \texttt{Subscript}
-      \item \texttt{SmallCaps}
-      \item \texttt{Quoted}
-      \item \texttt{Cite}
-      \item \texttt{Code}
-      \item \texttt{Space}
-      \item \texttt{SoftBreak}
-      \item \texttt{LineBreak}
-      \item \texttt{Math}
-      \item \texttt{RawInline}
-      \item \texttt{Link}
-      \item \texttt{Image}
-      \item \texttt{Note}
-      \item \texttt{Span}
-    \end{enumerate}
-  \end{multicols}
-  \vspace*{-1em}
-  \caption{Complete list of elements of Pandoc's AST (as of Pandoc 2.14.2)}
-  \label{fig:pandoc-elems}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \begin{tikzpicture}[anchor=base, baseline, node distance=0.6cm]
+  \begin{tikzpicture}[anchor=base, baseline, node distance=0.4cm]
     \node (hello) {Hello\textvisiblespace};
     \node [right=of hello, align=left, xshift=0.2cm] (mdemph) {
       \macro{markdownRenderer} \\
@@ -379,22 +332,70 @@ Finally, there is a group of elements without any corresponding macros, like the
   \label{fig:markdown-ast}
 \end{figure}
 
+% Prvky Pandocu prevzaté z dokumentácie: \textsf{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}
+
+\begin{figure}
+  \centering
+  \begin{multicols}{3}
+    \begin{compactenum}
+      \item \texttt{Plain}
+      \item \texttt{Para}
+      \item \texttt{LineBlock}
+      \item \texttt{CodeBlock}
+      \item \texttt{RawBlock}
+      \item \texttt{BlockQuote}
+      \item \texttt{OrderedList}
+      \item \texttt{BulletList}
+      \item \texttt{DefinitionList}
+      \item \texttt{Header}
+      \item \texttt{HorizontalRule}
+      \item \texttt{Table}
+      \item \texttt{Div}
+      \item \texttt{Null}
+      \item \texttt{Str}
+      \item \texttt{Emph}
+      \item \texttt{Underline}
+      \item \texttt{Strong}
+      \item \texttt{Strikeout}
+      \item \texttt{Superscript}
+      \item \texttt{Subscript}
+      \item \texttt{SmallCaps}
+      \item \texttt{Quoted}
+      \item \texttt{Cite}
+      \item \texttt{Code}
+      \item \texttt{Space}
+      \item \texttt{SoftBreak}
+      \item \texttt{LineBreak}
+      \item \texttt{Math}
+      \item \texttt{RawInline}
+      \item \texttt{Link}
+      \item \texttt{Image}
+      \item \texttt{Note}
+      \item \texttt{Span}
+    \end{compactenum}
+  \end{multicols}
+  \vspace*{-1em}
+  \caption{Complete list of elements of Pandoc's AST (as of Pandoc~2.14.2)}
+  \label{fig:pandoc-elems}
+\end{figure}
+
 \begin{figure}
   \centering
   \begin{multicols}{2}
-    \begin{enumerate}
+    \footnotesize
+    \begin{compactenum}
       \item Tickbox Renderers
-      \begin{enumerate}
+      \begin{compactenum}
         \item \texttt{TickedBox}
         \item \texttt{HalfTickedBox}
         \item \texttt{UntickedBox}
-      \end{enumerate}
+      \end{compactenum}
       \item \texttt{InterblockSeparator}
       \item \texttt{LineBreak}
       \item \texttt{Ellipsis}
       \item \texttt{Nbsp}
       \item Special Character Renderers
-      \begin{enumerate}
+      \begin{compactenum}
         \item \texttt{Ampersand}
         \item \texttt{Backslash}
         \item \texttt{Circumflex}
@@ -406,22 +407,22 @@ Finally, there is a group of elements without any corresponding macros, like the
         \item \texttt{RightBrace}
         \item \texttt{Tilde}
         \item \texttt{Underscore}
-      \end{enumerate}
+      \end{compactenum}
       \item \texttt{CodeSpan}
       \item \texttt{Link}
       \item \texttt{Image}
       \item \texttt{ContentBlock}
       \item Bullet List
-      \begin{enumerate}
+      \begin{compactenum}
         \item \texttt{UlBegin}
         \item \texttt{UlBeginTight}
         \item \texttt{UlItem}
         \item \texttt{UlItemEnd}
         \item \texttt{UlEnd}
         \item \texttt{UlEndTight}
-      \end{enumerate}
+      \end{compactenum}
       \item Ordered List
-      \begin{enumerate}
+      \begin{compactenum}
         \item \texttt{OlBegin}
         \item \texttt{OlBeginTight}
         \item \texttt{OlItem}
@@ -429,9 +430,9 @@ Finally, there is a group of elements without any corresponding macros, like the
         \item \texttt{OlItemWithNumber}
         \item \texttt{OlEnd}
         \item \texttt{OlEndTight}
-      \end{enumerate}
+      \end{compactenum}
       \item Definition List
-      \begin{enumerate}
+      \begin{compactenum}
         \item \texttt{DlBegin}
         \item \texttt{DlBeginTight}
         \item \texttt{DlItem}
@@ -440,24 +441,24 @@ Finally, there is a group of elements without any corresponding macros, like the
         \item \texttt{DlDefinitionEnd}
         \item \texttt{DlEnd}
         \item \texttt{DlEndTight}
-      \end{enumerate}
+      \end{compactenum}
       \item Emphasis
-      \begin{enumerate}
+      \begin{compactenum}
         \item \texttt{Emphasis}
         \item \texttt{StrongEmphasis}
-      \end{enumerate}
+      \end{compactenum}
       \item Block Quote
-      \begin{enumerate}
+      \begin{compactenum}
         \item \texttt{BlockQuoteBegin}
         \item \texttt{BlockQuoteEnd}
-      \end{enumerate}
+      \end{compactenum}
       \item Code Block
-      \begin{enumerate}
+      \begin{compactenum}
         \item \texttt{InputVerbatim}
         \item \texttt{InputFencedCode}
-      \end{enumerate}
+      \end{compactenum}
       \item YAML Metadata
-      \begin{enumerate}  % nepotrebné?
+      \begin{compactenum}  % nepotrebné?
         \item \texttt{JekyllDataBegin}
         \item \texttt{JekyllDataEnd}
         \item \texttt{JekyllDataMappingBegin}
@@ -468,23 +469,23 @@ Finally, there is a group of elements without any corresponding macros, like the
         \item \texttt{JekyllDataNumber}
         \item \texttt{JekyllDataString}
         \item \texttt{JekyllDataEmpty}
-      \end{enumerate}
+      \end{compactenum}
       \item Heading
-      \begin{enumerate}
+      \begin{compactenum}
         \item \texttt{HeadingOne}
         \item \texttt{HeadingTwo}
         \item \texttt{HeadingThree}
         \item \texttt{HeadingFour}
         \item \texttt{HeadingFive}
         \item \texttt{HeadingSix}
-      \end{enumerate}
+      \end{compactenum}
       \item \texttt{HorizontalRule}
       \item \texttt{Footnote}
       \item \texttt{Cite}
       \item \texttt{TextCite}
       \item \texttt{Table}
       \item \texttt{InlineHtmlComment}
-    \end{enumerate}
+    \end{compactenum}
   \end{multicols}
   \vspace*{-1em}
   \caption{A complete list of output macros of the Markdown package for version 2.11.0}
