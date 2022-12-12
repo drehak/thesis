@@ -95,12 +95,26 @@
 \usepackage[export]{adjustbox}
 
 \usepackage{microtype}
+\usepackage{hyphenat}
 \hyphenation{light-weight}
 \hyphenation{con-struc-tors}
 
-\let\oldlooseness=\looseness
-\newcommand{\macro}[1]{\texttt{\textbackslash{}{#1}}}
-\newcommand{\renderer}[1]{\texttt{\textbackslash{}markdownRenderer{#1}}}
+\newcommand\macro[1]{\texttt{\textbackslash{}{#1}}}
+\newcommand\pandoc[1]{\macro{pandoc\-{#1}}}
+\newcommand\renderer[1]{\macro{markdown\-Renderer\-{#1}}}
+\ExplSyntaxOn
+\newcommand\file[1]
+  {
+    \str_case:nn
+      { #1 }
+      {
+        { p2md.lua } { \texttt{pandoc\hyp{}to\hyp{}markdown.lua} }
+        { p2md.tex } { \texttt{pandoc\hyp{}to\hyp{}markdown.tex} }
+        { p2md.sty } { \texttt{pandoc\hyp{}to\hyp{}markdown.sty} }
+        % TODO add default
+      }
+  }
+\ExplSyntaxOff
 
 \begin{document}
 %% Uncomment the following lines (by removing the %% at the beginning)
@@ -215,7 +229,7 @@ As an aside, for some output formats (like \LaTeX{}, HTML or roff macros above),
 The input files of \TeX{} are plain text and their main elements are text to be typeset and control sequences, which influence how the text is to be typeset. 
 Control sequences begin with their identifier, which consists of a backslash and a sequence of letters (uppercase or lowercase). Additionally, some control sequences take one or more of following tokens as parameters. The \TeX{} engine itself has around 300 of built-in control sequences, so-called \textit{primitives}.
 
-An example of a primitive is \macro{end}, which is used for halting the \TeX{} engine and which takes no parameters. Another example is the primitive \macro{kern}, which inserts a blank fill of a given length. When the \TeX{} engine encounters \texttt{\textbackslash{}kern1em}, it inserts a blank fill, which is 1em wide.
+An example of a primitive is \macro{end}, which is used for halting the \TeX{} engine and which takes no parameters. Another example is the primitive \macro{kern}, which inserts a blank fill of a given length. When the \TeX{} engine encounters \macro{kern1em}, it inserts a blank fill, which is 1em wide.
 
 Besides primitives, there can also be \textit{macros}, which are control sequences that recursively expand into other control sequences and groups of characters. Macros can be defined using the sequence \macro{def}, which can happen directly in the input file, or in a \textit{format}, which is essentially a collection of definitions in a single file. Knuth himself has defined such a format called \textit{plain \TeX{}} as the default format for \TeX{}.
 
@@ -226,7 +240,7 @@ An example of a macro is \macro{quad}, which is defined in plain \TeX{} as follo
 \def\enspace{\kern.5em}
 \end{lstlisting}
 
-When the macro is defined (e.g. by loading the format) and \macro{quad} is encountered by the \TeX{} engine, it is expanded into \texttt{\textbackslash{}kern.5em}. This results in a 0.5em wide blank fill as outlined above.
+When the macro is defined (e.g. by loading the format) and \macro{quad} is encountered by the \TeX{} engine, it is expanded into \macro{kern.5em}. This results in a 0.5em wide blank fill as outlined above.
 
 Several formats have been created specifically to provide abstractions above plain \TeX{} that allow greater focus on content rather than formatting itself, since plain \TeX{} can be cumbersome for creating documents. The most popular such system is \LaTeX{}, first released in 1984.
 
@@ -497,19 +511,19 @@ Finally, there is a group of elements without any corresponding macros, like the
 In this chapter, I will describe how the proof of concept for the plain \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
 
 \section{The custom Pandoc writer itself}
-As described in chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \texttt{pandoc-to-markdown.lua}, which is also its name in the proof of concept.
+As described in chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \file{p2md.lua}, which is also its name in the proof of concept.
 
 For each AST element type, the writer defines a pure function that outputs the element in the output format. If the element has any child elements, they have already been processed by other functions by the time they are passed as arguments. Therefore, it is not necessary to implement the recursive descent manually.
 
-Functions in \texttt{pandoc-to-markdown.lua} return macros of the form \macro{pandocElementName}, similarly to the Markdown package with its \renderer{ElementName}. These macros are defined in the \texttt{pandoc-to-markdown.tex} file. This allows the user to change the appearance of elements by simply redefining the macros on the \TeX{} side.\footnote{The proof of concept actually uses this in \texttt{pandoc-to-markdown.sty} to redefine some macros with equivalent \LaTeX{} constructs.} It also results in a somewhat cleaner implementation, since the style of all elements is defined in a single \TeX{} file. \textit{(reformulate?)}
+Functions in \file{p2md.lua} return macros of the form \pandoc{ElementName}, similarly to the Markdown package with its \renderer{ElementName}. These macros are defined inside the \file{p2md.tex} file. This allows the user to change the appearance of elements by simply redefining the macros on the \TeX{} side.\footnote{The proof of concept actually uses this in \file{p2md.sty} to redefine some macros with equivalent \LaTeX{} constructs.} It also results in a somewhat cleaner implementation, since the style of all elements is defined in a single \TeX{} file. \textit{(reformulate?)}
 
 Internally, Pandoc splits elements into two groups of inline elements and block elements. As the name suggets, block elements appear as vertically separate blocks in the document (e.g. paragraphs, lists or tables), while inline elements can occur inside a line of text - which is generally a block element. This distinction does not matter for the user, perhaps not even the author of a custom writer. However, it constrains which elements can appear in others - for each child element, it is specified whether it's a block element or an inline element. Generally, block elements can contain block elements or inline elements, while inline elements can only contain other inline elements.\footnote{The one exception to this is \texttt{Note}, which represents a footnote or an endnote and its contents are represented as a list of block elements. However, these elements appear outside the parent element of the note, such as the contents of this footnote.}
 
-I have reordered the functions in \texttt{pandoc-to-markdown.lua} so that they appear in the same order in which they are defined in Pandoc\footnote{\url{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}}. Nevertheless, since inline elements are structurally simpler and cannot contain block elements, I will describe them first.
+I have reordered the functions in \file{p2md.lua} so that they appear in the same order in which they are defined in Pandoc\footnote{\url{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}}. Nevertheless, since inline elements are structurally simpler and cannot contain block elements, I will describe them first.
 
 \subsection{Inline elements}
 
-The first inline element is \texttt{Str}, which simply defines a string without spaces. A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}. To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters, for example \renderer{Backslash}, the occurences of these characters will be replaced with their respective macros. (It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \macro{pandocBackslash\{\}}. This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings - for HTML, of course:
+The first inline element is \texttt{Str}, which simply defines a string without spaces. A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}. To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters, for example \renderer{Backslash}, the occurences of these characters will be replaced with their respective macros. (It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \pandoc{Backslash\{\}}. This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings - for HTML, of course:
 
 $ $
 
@@ -539,7 +553,7 @@ end
 $ $
 
 \noindent
-There is a problem with this construct -- \texttt{gsub} replaces all occurences of the given characters in \texttt{s}. However, if the modified function for plain \TeX{} output would in this way replace \texttt{\{} with \texttt{\textbackslash{}pandocLeftBrace\{\}}, this would generate another occurence of \texttt{\{}, which would also get replaced with \texttt{\textbackslash{}pandocLeftBrace\{\}}\dots and so on. This can be mitigated by saving the substitution into a variable and returning it at the end of the inner function. (Some characters in the pattern provided to \texttt{gsub} have to be escaped with \%.)
+There is a problem with this construct -- \texttt{gsub} replaces all occurences of the given characters in \texttt{s}. However, if the modified function for plain \TeX{} output would in this way replace \texttt{\{} with \pandoc{LeftBrace\{\}}, this would generate another occurence of \texttt{\{}, which would also get replaced with \pandoc{LeftBrace\{\}}\dots{} and so on. This can be mitigated by saving the substitution into a variable and returning it at the end of the inner function. (Some characters in the pattern given to \texttt{gsub} have to be escaped with \%.)
 
 $ $
 
@@ -601,7 +615,7 @@ end
 $ $
 
 \noindent
-\macro{pandocEmph} is defined in \texttt{pandoc-to-markdown.tex}, as outlined above:
+\pandoc{Emph} is defined in \file{p2md.tex}, as outlined above:
 
 $ $
 
@@ -629,7 +643,7 @@ end
 $ $
 
 \noindent
-\texttt{pandoc-to-markdown.tex}:
+\file{p2md.tex}:
 
 $ $
 
@@ -642,7 +656,7 @@ $ $
 $ $
 
 \noindent
-For the next few inline elements, the structure of the writer functions is virtually the same, so it is not worth listing them here. The macros look similar too. The only new construct occurs in \macro{pandocSingleQuoted} and \macro{pandocDoubleQuoted}, which surround their parameter with \texttt{`} and \texttt{'}, the characters used by \TeX{} to represent quotes:
+For the next few inline elements, the structure of the writer functions is virtually the same, so it is not worth listing them here. The macros look similar too. The only new construct occurs in \pandoc{SingleQuoted} and \pandoc{DoubleQuoted}, which surround their parameter with \texttt{`} and \texttt{'}, the characters used by \TeX{} to represent quotes:
 
 $ $
 
@@ -670,7 +684,7 @@ $ $
 
 \section{\TeX{} macropackage surrounding the writer}
 \emph{
-This section will describe pandoc-to-markdown.tex, as well as pandoc-to-markdown.sty.
+This section will describe pandoc\hyp{}to\hyp{}markdown.tex, as well as pandoc\hyp{}to\hyp{}markdown.sty.
 }
 
 \subsection{pandoc... macros}
