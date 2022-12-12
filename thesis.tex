@@ -610,7 +610,7 @@ end
 $ $
 
 \noindent
-Next inline element is \texttt{Emph}, representing emphasis. \texttt{Emph} contains a list of inline elements, but any special characters have already been escaped by \texttt{Str} executed on the strings inside, so there is no need to do that again. Here, the Lua operator \texttt{..} performs concatenation.
+Next inline element is \texttt{Emph}, representing emphasis. \texttt{Emph} contains a list of inline elements, but any special characters inside them have already been escaped by \texttt{Str} executed on the strings inside, so there is no need to do that again. Here, the Lua operator \texttt{..} performs concatenation.
 
 $ $
 
@@ -684,17 +684,267 @@ $ $
 
 $ $
 
-% With \texttt{Cite}, things start to get a little bit complicated
+\noindent
+With \texttt{Cite}, things start to get a bit complicated.\todo{describe the Pandoc side} On the side of the Markdown package, the macro \renderer{Cite} takes a variable number of tokens: the first one is the number of citations, followed by a sequence of four tokens -- a flag that indicates whether to suppress displaying the author, then the prefix, suffix and ID of the citation -- for each of those citations. To assemble this in Lua, we construct a simple buffer table\footnote{A table is the basic structure in Lua, which functions as a hash map indexed using numbers. However, Lua provides functions on tables that can make them function more like lists/arrays, such as \texttt{table.insert}, which is analogous to Python's \texttt{append} on lists and inserts a value into the table, with the key being the greatest key in the table increased by 1.}, which we fill using data obtained from the parameters of \texttt{Cite}. Then we return a concatenation of this table:
 
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Cite(s, cs)
+  local buffer = {"\\pandocCite{" .. #cs .. "}"}
+  for _, citation in pairs(cs) do
+    if (citation.citationMode == "SuppressAuthor") then
+      table.insert(buffer, "{-}")
+    else
+      table.insert(buffer, "{+}")
+    end
+    table.insert(buffer, "{" .. citation.citationPrefix .. "}")
+    table.insert(buffer, "{" .. citation.citationSuffix .. "}")
+    table.insert(buffer, "{" .. citation.citationId .. "}")
+  end
+  return table.concat(buffer)
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocCite{\markdownRendererCite}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+Some of the functions provide a table with attributes in the parameters. This table can get populated by e.g. Pandoc's HTML reader. In the cases of some elements, such as \texttt{Div} or \texttt{CodeBlock} described in the section about block elements, one of the attributes usually encodes information necessary for describing the element. As for attributes with arbitrary keys and values, the Markdown package currently has no way to interpret or process them, so the plain \TeX{} writer can discard them for now. Such is the case for \texttt{Code}:
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Code(s, attr)
+  return "\\pandocCode{" .. escape(s) .. "}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocCode{\markdownRendererCodeSpan}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+Regarding whitespace, the authors of Pandoc have for some reason decided to turn spaces into their own element type. Pandoc also distinguishes between line breaks and so-called ``soft breaks'', which in some formats \textit{suggest} a line break without strictly enforcing it.\todo{check if this is correct} Since neither \TeX{} nor the Markdown package offer a mechanism for this\todo{check too}, it is rather safe to assume a simple space in the place of a soft break too.
+
+Note that there is a new line after \pandoc{LineBreak}. A single newline in itself will not get rendered by \TeX{}. The reason for including it is different -- \TeX{} has a hard memory limit\todo{check limit size} and loading a line which is too long could exhaust this limit. This is why the output document is at some places broken into multiple lines, a pattern which will be utilized again with some block elements.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Space()
+  return "\\pandocSpace{}"
+end
+
+function SoftBreak()
+  return "\\pandocSoftBreak{}"
+end
+
+function LineBreak()
+  return "\\pandocLineBreak\n"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocSpace{ }%
+\def\pandocSoftBreak{ }%
+\def\pandocLineBreak{\markdownRendererLineBreak}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+As mentioned in section 2.4, the custom writer API splits the element \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}, the latter of which is technically a block element. In \TeX{}, the former is represented by wrapping the math contents in two dollar characters, while the latter is delimited by \texttt{\textbackslash{}[} and \texttt{\textbackslash{}]}.
+
+Luckily, Pandoc's AST represents all math using \TeX{} syntax for math, so there is no need for additional conversion of math syntax in the plain \TeX{} writer.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function InlineMath(s)
+  return "\\pandocInlineMath{" .. s .. "}"
+end
+
+function DisplayMath(s)
+  return "\\pandocDisplayMath{" .. s .. "}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocInlineMath#1{$#1$}%
+\def\pandocDisplayMath#1{\[#1\]}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+Some input formats of Pandoc allow raw elements of other format types to be inlined in the output documents. Examples of this are raw HTML inside documents formatted with Markdown, or raw \TeX{} inside HTML documents or Jupyter notebooks. If an output format supports the format of the raw elements, it might be able to directly use its contents.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function RawInline(format, str)
+  return "\\pandocRawInline{" .. format .. "}{" .. str .. "}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+In the case of our plain \TeX{} writer, it is sensible to directly typeset raw elements of the \texttt{tex} format. Raw elements of other formats will simply be discarded, as seems to be the custom in other Pandoc writers.
+
+Here, as programming of \TeX{} macros is not my forte, expl3 syntax makes an appearance in \file{p2md.tex}. expl3 redefines how some characters are processed. For example, underscores and colons are valid characters inside identifiers of expl3 functions. The significance of whitespace is also reduced. Because of this, all expl3 code has to be surrounded by \macro{ExplSyntaxOn} and \macro{ExplSyntaxOff}.
+
+As for \macro{tl-if-eq-nnT}\todo{find a way to typeset underscores and colons here}, it is a variant of the macro \macro{tl-if-eq-nnTF}, which takes four parameters and returns the third, if the first two are equal, or the fourth, if they are not. \macro{tl-if-eq-nnT} is a variant that completely omits the ``false'' branch and outputs nothing if the elements are not equal, so it only takes three parameters. I have used the indentation style recommended by the expl3 manual\todo{cite}, so snippets using expl3 syntax will be broken into multiple lines.
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\ExplSyntaxOn
+\def\pandocRawInline#1#2
+  {
+    \tl_if_eq:nnT
+      { #1 }
+      { tex }
+      { #2 }
+  }
+\ExplSyntaxOff
+\end{lstlisting}
+
+$ $
+
+\noindent
+\texttt{Link}, \texttt{Image}, \texttt{CaptionedImage}.\todo{write more}
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Link(s, tgt, tit, attr)
+  return "\\pandocLink{" .. s .. "}{" .. escape(tgt) .. "}{" .. tgt .. "}{" .. escape(tit) .. "}"
+end
+
+function Image(s, src, tit, attr)
+  return "\\pandocImage{" .. s .. "}{" .. escape(src) .. "}{" .. src .. "}{" .. escape(tit) .. "}"
+end
+
+function CaptionedImage(src, tit, s, attr)
+  return "\\pandocCaptionedImage{" .. s .. "}{" .. escape(src) .. "}{" .. src .. "}{" .. escape(string.sub(tit, 5)) .. "}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+At the moment, the macros for these elements simply pass their parameters to the corresponding macros of the Markdown package, albeit in greater numbers than before:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocLink#1#2#3#4{\markdownRendererLink{#1}{#2}{#3}{#4}}
+\def\pandocImage#1#2#3#4{\markdownRendererImage{#1}{#2}{#3}{#4}}
+\def\pandocCaptionedImage#1#2#3#4{\markdownRendererImage{#1}{#2}{#3}{#4}}
+\end{lstlisting}
+
+$ $
+
+\noindent
+The last two inline elements are \texttt{Note} and \texttt{Span}, representing footnotes and HTML span of texts respectively. Again, the attributes of \texttt{Span} are discarded for now, which is unfortunate, since attributes are the main reason of using \texttt{<span>} in HTML in the first place.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Note(s)
+  return "\\pandocNote{" .. s .. "}"
+end
+
+function Span(s, attr)
+  return "\\pandocSpan{" .. s .. "}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocNote#1{#1}%
+\def\pandocSpan#1{#1}%
+\end{lstlisting}
+
+$ $
 
 
 \subsection{Block elements}
 
 \section{\TeX{} macropackage surrounding the writer}
-\emph{This section will shortly describe \file{p2md.sty}.}
+\emph{Shortly describe \file{p2md.sty}.}
 
 \section{Example documents}
-\emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \label{fig:html-browsers-typeset} \textbf{Consider if this should not be a separate chapter.}}
+\emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \label{fig:html-browsers-typeset} \todo{Consider if this should not be a separate chapter.}}
 
 % \includepdf[pages={1}]{pandoc-to-markdown/examples/html-browsers.pdf}
 
