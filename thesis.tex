@@ -261,9 +261,9 @@ There are multiple compatible implementations of the \TeX{} engine, some of whic
 \section{The Markdown package for \TeX{}}
 The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of being easy to read and write. This has eventually caused wide adoption of the language on the Internet. The package provides a way to embed blocks of text written in the Markdown language directly into \TeX{} documents, resulting in another layer of abstraction. During typesetting, these blocks are parsed and eventually expanded into native \TeX{} macros correspoding to the Markdown input. 
 
-Because the Markdown package offers first-class support for plain \TeX{} and already tackles the task of converting high-level Markdown elements into low-level \TeX{} macros, it was suitable for its use in a working prototype of the plain \TeX{} writer for Pandoc. That is, the writer can simply produce macros defined by the Markdown package, which can then be expanded into \TeX{} primitives.
+Because the Markdown package offers first-class support for plain \TeX{} and already tackles the task of converting high-level Markdown elements into low-level \TeX{} macros, it was suitable for its use in a working prototype of a generic \TeX{} writer for Pandoc. That is, the writer can simply produce macros defined by the Markdown package, which can then be expanded into \TeX{} primitives.
 
-Regarding usage, the main intended way to use the Markdown package with plain \TeX{} is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive and takes a filename as an argument; or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown-formatted text directly embedded into the document source. Since we are mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
+Regarding usage, the main intended way to use the Markdown package is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive and takes a filename as an argument; or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown-formatted text directly embedded into the document source. (Alternatively, the \LaTeX{} layer for the Markdown package provides an environment named \texttt{markdown} with the same purpose.) Since we are mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
 
 \subsection{Lunamark writer -- a previously explored approach}
 Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which was coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark is capable of fast conversion of Markdown, its only input format, into other commonly used markup formats. Since the Lua\TeX{} engine is able to directly execute Lua code, Lunamark's parser was suitable for its use in the Markdown package.
@@ -509,7 +509,7 @@ Finally, there is a group of elements without any corresponding macros in the Ma
 \end{figure}
 
 \chapter{Implementation}
-In this chapter, I will describe how the proof of concept for the plain \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
+In this chapter, I will describe how the proof of concept for the generic \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
 
 \section{Plain \TeX{} writer for Pandoc and the macros it outputs}
 As described in chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \file{p2md.lua}, which is also its name in the proof of concept.
@@ -518,13 +518,13 @@ For each AST element type, the writer defines a pure function that outputs the e
 
 Functions in \file{p2md.lua} return macros of the form \pandoc{ElementName}, similarly to the Markdown package with its \renderer{ElementName}. These macros are defined inside the \file{p2md.tex} file. This allows the user to change the appearance of elements by simply redefining the macros on the \TeX{} side.\footnote{The proof of concept actually uses this in \file{p2md.sty} to redefine some macros with equivalent \LaTeX{} constructs.} It also results in a somewhat cleaner implementation, since the style of all elements is defined in a single \TeX{} file. \todo{reformulate?}
 
-Internally, Pandoc splits elements into two groups of inline elements and block elements. As the name suggets, block elements appear as vertically separate blocks in the document (e.g. paragraphs, lists or tables), while inline elements can occur inside a line of text - which is generally a block element. This distinction does not matter for the user, perhaps not even the author of a custom writer. However, it constrains which elements can appear in others - for each child element, it is specified whether it's a block element or an inline element. Generally, block elements can contain block elements or inline elements, while inline elements can only contain other inline elements.\footnote{The one exception to this is \texttt{Note}, which represents a footnote or an endnote and its contents are represented as a list of block elements. However, these elements appear outside the parent element of the note, such as the contents of this footnote.}
+Internally, Pandoc splits elements into two groups of inline elements and block elements. As the name suggets, block elements appear as vertically separate blocks in the document (e.g. paragraphs, lists or tables), while inline elements can occur inside a line of text -- which is generally a block element. This distinction does not matter for the user, perhaps not even the author of a custom writer. However, it constrains which elements can appear in others -- for each child element, it is specified whether it's a block element or an inline element. Generally, block elements can contain block elements or inline elements, while inline elements can only contain other inline elements.\footnote{The one exception to this is \texttt{Note}, which represents a footnote or an endnote and its contents are represented as a list of block elements. However, these elements appear outside the parent element of the note, such as the contents of this footnote.}
 
 I have reordered the functions in \file{p2md.lua} so that they appear in the same order in which they are defined in Pandoc\footnote{\url{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}}. Nevertheless, since inline elements are structurally simpler and cannot contain block elements, I will describe them first.
 
 \subsection{Inline elements}
 
-The first inline element is \texttt{Str}, which simply defines a string without spaces. A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}. To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters, for example \renderer{Backslash}, the occurences of these characters will be replaced with their respective macros. (It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \pandoc{Backslash\{\}}. This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings - for HTML, of course:
+The first inline element is \texttt{Str}, which simply defines a string without spaces. A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}. To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters, for example \renderer{Backslash}, the occurences of these characters will be replaced with their respective macros. (It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \pandoc{Backslash\{\}}. This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings -- for HTML, of course:
 
 $ $
 
@@ -554,7 +554,7 @@ end
 $ $
 
 \noindent
-There is a problem with this construct -- \texttt{gsub} replaces all occurences of the given characters in \texttt{s}. However, if the modified function for plain \TeX{} output would in this way replace \texttt{\{} with \pandoc{LeftBrace\{\}}, this would generate another occurence of \texttt{\{}, which would also get replaced with \pandoc{LeftBrace\{\}}\dots{} and so on. This can be mitigated by saving the substitution into a variable and returning it at the end of the inner function. (Some characters in the pattern given to \texttt{gsub} have to be escaped with \%.)
+There is a problem with this construct -- \texttt{gsub} replaces all occurences of the given characters in \texttt{s}. However, if the modified function for \TeX{} output would in this way replace \texttt{\{} with \pandoc{LeftBrace\{\}}, this would generate another occurence of \texttt{\{}, which would also get replaced with \pandoc{LeftBrace\{\}}\dots{} and so on. This can be mitigated by saving the substitution into a variable and returning it at the end of the inner function. (Some characters in the pattern given to \texttt{gsub} have to be escaped with \%.)
 
 $ $
 
@@ -715,7 +715,7 @@ $ $
 $ $
 
 \noindent
-Some of the functions provide a table with attributes in the parameters. This table can get populated by e.g. Pandoc's HTML reader. In the cases of some elements, such as \texttt{Div} or \texttt{CodeBlock} (described in section 3.1.2), one of the attributes usually encodes information necessary for describing the element. As for attributes with arbitrary keys and values, the Markdown package currently has no way to interpret or process them, so the plain \TeX{} writer can discard them for now. Such is the case for \texttt{Code}:
+Some of the functions provide a table with attributes in the parameters. This table can get populated by e.g. Pandoc's HTML reader. In the cases of some elements, such as \texttt{Div} or \texttt{CodeBlock} (described in section 3.1.2), one of the attributes usually encodes information necessary for describing the element. As for attributes with arbitrary keys and values, the Markdown package currently has no way to interpret or process them, so the \TeX{} writer can discard them for now. Such is the case for \texttt{Code}:
 
 $ $
 
@@ -785,7 +785,7 @@ $ $
 \noindent
 As mentioned in section 2.4, the custom writer API splits the element \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}, the latter of which is technically a block element. In \TeX{}, the former is represented by wrapping the math contents in two dollar characters, while the latter is delimited by \texttt{\textbackslash{}[} and \texttt{\textbackslash{}]}.
 
-Luckily, Pandoc's AST represents all math using \TeX{} syntax for math, so there is no need for additional conversion of math syntax in the plain \TeX{} writer.
+Luckily, Pandoc's AST represents all math using \TeX{} syntax for math, so there is no need for additional conversion of math syntax in the \TeX{} writer.
 
 $ $
 
@@ -833,7 +833,7 @@ end
 $ $
 
 \noindent
-In the case of our plain \TeX{} writer, it is sensible to directly typeset raw elements of the \texttt{tex} format. Raw elements of other formats will simply be discarded, as seems to be the custom in other Pandoc writers.
+In the case of our \TeX{} writer, it is sensible to directly typeset raw elements of the \texttt{tex} format. Raw elements of other formats will simply be discarded, as seems to be the custom in other Pandoc writers.
 
 Here, as programming of \TeX{} macros is not my forte, expl3 syntax makes an appearance in \file{p2md.tex}. expl3 redefines how some characters are processed. For example, underscores and colons are valid characters inside identifiers of expl3 functions. The significance of whitespace is also reduced. Because of this, all expl3 code has to be surrounded by \macro{ExplSyntaxOn} and \macro{ExplSyntaxOff}.
 
@@ -1046,7 +1046,7 @@ $ $
 $ $
 
 \noindent
-An interesting pattern appears in \texttt{Blockquote}, as well as several other block elements. Instead of a single macro, the Markdown package implements two macros, \renderer{BlockQuoteBegin} and \renderer{BlockQuoteEnd}, which are used before and after the contents of the block quote. This was done mainly to avoid memory overflows during macro expansion. The plain \TeX{} writer copies this pattern and implements its own pair of block quote macros.
+An interesting pattern appears in \texttt{Blockquote}, as well as several other block elements. Instead of a single macro, the Markdown package implements two macros, \renderer{BlockQuoteBegin} and \renderer{BlockQuoteEnd}, which are used before and after the contents of the block quote. This was done mainly to avoid memory overflows during macro expansion. The \TeX{} writer copies this pattern and implements its own pair of block quote macros.
 
 $ $
 
@@ -1299,7 +1299,7 @@ $ $
 \subsection{Other objects}
 There is more to a custom writer than just functions for rendering elements. Here, I will shortly describe those extra objects.
 
-While not an element per se, any custom writer API also has to define a function called \texttt{Doc}. This function is only called once for the whole document and is able to add extra contents before/after the body of the document. (For example, the sample custom writer for HTML uses it to append contents of footnotes at the end.) The Markdown package offers a similar capability via a pair of macros that can be predefined at will, so the plain \TeX{} writer simply invokes those.
+While not an element per se, any custom writer API also has to define a function called \texttt{Doc}. This function is only called once for the whole document and is able to add extra contents before/after the body of the document. (For example, the sample custom writer for HTML uses it to append contents of footnotes at the end.) The Markdown package offers a similar capability via a pair of macros that can be predefined at will, so the \TeX{} writer simply invokes those.
 
 $ $
 
@@ -1374,9 +1374,9 @@ $ $
 
 There are currently two styles of defining custom writers for Pandoc, to which the Pandoc documentation refers to as ``classic'' and ``new''. The main difference between them is that the classic style writer defines its rendering functions on the top level, while in the new style, everything is processed through a top-level function named \texttt{Writer} which contains all the custom writer logic.
 
-For the plain \TeX{} writer, I have decided to go with the classic style. There were multiple reasons for this, the main one being that the classic style is what Pandoc's documentation covers. Another reason is that support for the new style was only introduced in Pandoc 2.18\footnote{The Pandoc documentation actually states that the new style of custom writers was introduced in 2.17.2. This is wrong. No such version was even released, 2.17.1.1 was immediately followed by 2.18.}, which was released in January 2022. Repositories of several high-profile Linux distributions ship versions of Pandoc that are way older than that. For instance, Fedora 37 released in November 2022 provides only packages with Pandoc 2.14.0.3\footnote{\url{https://packages.fedoraproject.org/pkgs/pandoc/pandoc/fedora-37.html}}, which was released in June 2021. Another example is Ubuntu 22.04 LTS (codenamed ``Jammy Jellyfish''), which, despite being released in April 2022, still ships Pandoc 2.9.2.1\footnote{\url{https://packages.ubuntu.com/jammy/pandoc}} from March 2020.
+For the generic \TeX{} writer, I have decided to go with the classic style. There were multiple reasons for this, the main one being that the classic style is what Pandoc's documentation covers. Another reason is that support for the new style was only introduced in Pandoc 2.18\footnote{The Pandoc documentation actually states that the new style of custom writers was introduced in 2.17.2. This is wrong. No such version was even released, 2.17.1.1 was immediately followed by 2.18.}, which was released in January 2022. Repositories of several high-profile Linux distributions ship versions of Pandoc that are way older than that. For instance, Fedora 37 released in November 2022 provides only packages with Pandoc 2.14.0.3\footnote{\url{https://packages.fedoraproject.org/pkgs/pandoc/pandoc/fedora-37.html}}, which was released in June 2021. Another example is Ubuntu 22.04 LTS (codenamed ``Jammy Jellyfish''), which, despite being released in April 2022, still ships Pandoc 2.9.2.1\footnote{\url{https://packages.ubuntu.com/jammy/pandoc}} from March 2020.
 
-Unbeknownst to me at the time, classic custom writers were going to be deprecated. According to the discussion on the related pull request\footnote{\url{https://github.com/jgm/pandoc/pull/8343}}, it will still be possible to update a classic writer to a new-style one. However, other breaking changes might still be introduced. As long as the plain \TeX{} writer is an external one instead of being built into Pandoc itself, it will have to deal with this in the future.
+Unbeknownst to me at the time, classic custom writers were going to be deprecated. According to the discussion on the related pull request\footnote{\url{https://github.com/jgm/pandoc/pull/8343}}, it will still be possible to update a classic writer to a new-style one. However, other breaking changes might still be introduced. As long as the generic \TeX{} writer is an external one instead of being built into Pandoc itself, it will have to deal with this in the future.
 
 \printbibliography[heading=bibintoc] %% Print the bibliography.
 
