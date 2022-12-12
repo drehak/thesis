@@ -511,7 +511,7 @@ Finally, there is a group of elements without any corresponding macros in the Ma
 \chapter{Implementation}
 In this chapter, I will describe how the proof of concept for the generic \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
 
-\section{Plain \TeX{} writer for Pandoc and the macros it outputs}
+\section{\TeX{} writer for Pandoc and the macros it outputs}
 As described in chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \file{p2md.lua}, which is also its name in the proof of concept.
 
 For each AST element type, the writer defines a pure function that outputs the element in the output format. If the element has any child elements, they have already been processed by other functions by the time they are passed as arguments. Therefore, it is not necessary to implement the recursive descent manually.
