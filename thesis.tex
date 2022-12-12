@@ -136,7 +136,17 @@
 %% \printnoidxglossary[title={Glossary}]
 
 \chapter{Introduction}
-\emph{Outline the goals of my thesis and the motivations behind them.}
+This thesis concerns the typesetting system \TeX{}, as well its package Markdown. Moreover, it concerns Pandoc, a universal document converter, and an integration of Pandoc's capabilities with the Markdown package.
+
+\TeX{} is a digital typesetting system capable of producing high-quality documents. It is especially widespread in academia becuase of its abilities in the typesetting of mathematics. However, its language can be verbose and cryptic for new and inexperienced users. The Markdown package addresses this by allowing users to supplement their \TeX{} documents with blocks of text written in Markdown, a markup language that is widespread on the Internet and easy to read and write.
+
+Pandoc is a utility able to convert between numerous document formats, including HTML, Markdown, or \LaTeX{} and Con\TeX{}t, two popular formats of \TeX{}. However, its \TeX{} output only produces rudimentary documents that do not leverage the full power of \TeX{} macros. It is true that the output can be edited further, but repeated conversion would undo such edits.
+Moreover, there is no way to influence Pandoc's \TeX{} output without reprogramming and recompiling Pandoc itself.
+Lastly, Pandoc does not provide a way to output documents for plain \TeX{} (i.e. without \LaTeX{} or Con\TeX{}t on top).
+
+The goal of this thesis is to integrate Pandoc with the Markdown package. Such an integration would allow users to supplement their \TeX{} documents with other documents or document snippets in formats such as HTML, DOCX or RTF. Moreover, since the Markdown package is capable of plain \TeX{} output, this would provide a way to obtain plain \TeX{} output from Pandoc.
+
+In Chapter 2, the author introduces Pandoc, \TeX{} and the Markdown package and outlines the proof of concept of the integration. Chapter 3 describes this proof of concept in greater detail and demonstrates its practical usage on a set of example documents. Chpater 4 concludes the thesis and outlines future work necessary for eventual inclusion of the writer from the proof of concept into Pandoc itself.
 
 \chapter{State of the art}
 This chapter briefly introduces Pandoc and the relevant parts of its architecture. It also introduces the \TeX{} and \LaTeX{} typesetting systems and finally the Markdown package, which works with both of these systems and which will be utilized to quickly produce a simple proof of concept for the Pandoc writer.
@@ -231,7 +241,7 @@ $ echo 'Hello *world*!' | pandoc -t plaintex.lua
 $ $
 
 \noindent
-We will construct such a writer in chapter 3.
+We will construct such a writer in Chapter 3.
 
 As an aside, for some output formats (like \LaTeX{}, HTML or roff macros above), the default output produced by Pandoc does not constitute a complete document ready for viewing/typesetting, but rather just a short snippet. This can be amended by the \texttt{-{}-standalone} option (\texttt{-s}~for short), which surrounds the snippet with a template of a full document. (All of the templates are too long to reasonably embed an example of such an output here.)
 
@@ -256,7 +266,7 @@ When the macro is defined (e.g. by loading the format) and \macro{enspace} is en
 
 Several formats have been created specifically to provide abstractions above plain \TeX{} that allow greater focus on content rather than formatting itself, since plain \TeX{} can be cumbersome for creating documents. Nowadays, the most popular such system is \LaTeX{}, first released in 1984.
 
-There are multiple compatible implementations of the \TeX{} engine, some of which add new features and implement their own primitives. An example is pdf\TeX{}, which is capable of direct output in the PDF format and also provides primitives for micro-typography. Another example is Lua\TeX{}, which will be of interest in chapter 3, since it is able to directly execute code written in the Lua language.
+There are multiple compatible implementations of the \TeX{} engine, some of which add new features and implement their own primitives. An example is pdf\TeX{}, which is capable of direct output in the PDF format and also provides primitives for micro-typography. Another example is Lua\TeX{}, which will be of interest in Chapter 3, since it is able to directly execute code written in the Lua language.
 
 \section{The Markdown package for \TeX{}}
 The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of being easy to read and write. This has eventually caused wide adoption of the language on the Internet. The package provides a way to embed blocks of text written in the Markdown language directly into \TeX{} documents, resulting in another layer of abstraction. During typesetting, these blocks are parsed and eventually expanded into native \TeX{} macros correspoding to the Markdown input. 
@@ -268,7 +278,7 @@ Regarding usage, the main intended way to use the Markdown package is either thr
 \subsection{Lunamark writer -- a previously explored approach}
 Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which was coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark is capable of fast conversion of Markdown, its only input format, into other commonly used markup formats. Since the Lua\TeX{} engine is able to directly execute Lua code, Lunamark's parser was suitable for its use in the Markdown package.
 
-Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc directly into the Markdown package. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before and my supervisor discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs macros that then get transformed into Markdown's macros. (The details of this are described in chapter 3). Eventually, it became clear that it is not necessary to directly extend Markdown's codebase with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be slightly reformulated.
+Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc directly into the Markdown package. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before and my supervisor discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs macros that then get transformed into Markdown's macros. (The details of this are described in Chapter 3). Eventually, it became clear that it is not necessary to directly extend Markdown's codebase with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be slightly reformulated.
 
 \section{Comparison of Pandoc and Markdown}
 
@@ -512,7 +522,7 @@ Finally, there is a group of elements without any corresponding macros in the Ma
 In this chapter, I will describe how the proof of concept for the generic \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
 
 \section{\TeX{} writer for Pandoc and the macros it outputs}
-As described in chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \file{p2md.lua}, which is also its name in the proof of concept.
+As described in Chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \file{p2md.lua}, which is also its name in the proof of concept.
 
 For each AST element type, the writer defines a pure function that outputs the element in the output format. If the element has any child elements, they have already been processed by other functions by the time they are passed as arguments. Therefore, it is not necessary to implement the recursive descent manually.
 
