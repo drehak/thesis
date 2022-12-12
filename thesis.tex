@@ -520,7 +520,7 @@ Finally, there is a group of elements without any corresponding macros, like the
 \chapter{Implementation}
 In this chapter, I will describe how the proof of concept for the plain \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
 
-\section{The custom Pandoc writer itself}
+\section{The custom writer and the macros it outputs}
 As described in chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \file{p2md.lua}, which is also its name in the proof of concept.
 
 For each AST element type, the writer defines a pure function that outputs the element in the output format. If the element has any child elements, they have already been processed by other functions by the time they are passed as arguments. Therefore, it is not necessary to implement the recursive descent manually.
@@ -690,20 +690,8 @@ $ $
 
 \subsection{Block elements}
 
-\subsection{Escaping special characters}
-
 \section{\TeX{} macropackage surrounding the writer}
-\emph{
-This section will describe pandoc\hyp{}to\hyp{}markdown.tex, as well as pandoc\hyp{}to\hyp{}markdown.sty.
-}
-
-\subsection{pandoc... macros}
-\emph{
-Describe the set of macros that was implemented. Maybe it's worth it to also describe the \LaTeX{} overrides.
-}
-
-\subsection{Caveats}
-\emph{maybe nějaký veselý historky z natáčení (shellesc/write18, pandocInput, jak pejsek s kočičkou spustili Pandoc z TeXu, codeBlocks v samostatných súboroch + auxdir (haha) etc.)}
+\emph{This section will shortly describe \file{p2md.sty}.}
 
 \section{Example documents}
 \emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \label{fig:html-browsers-typeset} \textbf{Consider if this should not be a separate chapter.}}
