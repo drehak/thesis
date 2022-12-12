@@ -520,7 +520,7 @@ Finally, there is a group of elements without any corresponding macros, like the
 \chapter{Implementation}
 In this chapter, I will describe how the proof of concept for the plain \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
 
-\section{The custom writer and the macros it outputs}
+\section{Plain \TeX{} writer for Pandoc and the macros it outputs}
 As described in chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \file{p2md.lua}, which is also its name in the proof of concept.
 
 For each AST element type, the writer defines a pure function that outputs the element in the output format. If the element has any child elements, they have already been processed by other functions by the time they are passed as arguments. Therefore, it is not necessary to implement the recursive descent manually.
@@ -724,7 +724,7 @@ $ $
 $ $
 
 \noindent
-Some of the functions provide a table with attributes in the parameters. This table can get populated by e.g. Pandoc's HTML reader. In the cases of some elements, such as \texttt{Div} or \texttt{CodeBlock} described in the section about block elements, one of the attributes usually encodes information necessary for describing the element. As for attributes with arbitrary keys and values, the Markdown package currently has no way to interpret or process them, so the plain \TeX{} writer can discard them for now. Such is the case for \texttt{Code}:
+Some of the functions provide a table with attributes in the parameters. This table can get populated by e.g. Pandoc's HTML reader. In the cases of some elements, such as \texttt{Div} or \texttt{CodeBlock} (described in section 3.1.2), one of the attributes usually encodes information necessary for describing the element. As for attributes with arbitrary keys and values, the Markdown package currently has no way to interpret or process them, so the plain \TeX{} writer can discard them for now. Such is the case for \texttt{Code}:
 
 $ $
 
@@ -937,11 +937,381 @@ $ $
 
 $ $
 
-
 \subsection{Block elements}
 
-\section{\TeX{} macropackage surrounding the writer}
-\emph{Shortly describe \file{p2md.sty}.}
+Block elements differ from inline elements mainly in the spacing between them. In a custom writer, it is sufficient to define this spacing just once through the \texttt{Blocksep} function:
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Blocksep()
+  return "\\pandocBlocksep\n"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocBlocksep{\markdownRendererInterblockSeparator}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+The first two block elements, \texttt{Plain} and \texttt{Para}, simply describe blocks of plain text. The main difference (between the two, as well as between them and \texttt{Str}) is in which elements they are allowed to exist as children\todo{check}, but their appearance is virtually the same.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Plain(s)
+  return s
+end
+
+function Para(s)
+  return s
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+Next is \texttt{Lineblock}, a block of lines without indentation (unlike a chain of paragraphs). Since there is no support for blocks of lines in the Markdown package and we would like to maintain the separation between using \pandoc{...} macros in \file{p2md.lua} and more primitive macros in \file{p2md.tex}, the best solution for now is to intersperse the lines with ``hard'' line breaks, which add no indentation.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function LineBlock(ls)
+  return table.concat(ls, "\\pandocLineBreak\n")
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+There is also \texttt{CodeBlock}, a block version of \texttt{Code}. The crucial difference between these two elements is in the macros that the Markdown package provides -- while \renderer{CodeSpan} simply takes a string of code, which it directly typesets, \renderer{Verbatim} takes the name of a file that containins the block of code. (Additionally, \renderer{FencedCode} takes one more parameter that describes the language of that block of code.) However, in Pandoc's AST, the contents of blocks of code are represented directly inside the \texttt{CodeBlock} elements.
+
+To bridge this gap, the function \texttt{Codeblock} in the writer creates a file inside a helper\file{helper?} directory (see section 3.3) and writes the contents of the codeblock into it. A global variable that counts these blocks is incremented every time this function runs, resulting in unique filenames:
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+-- counter for filenames
+local codeBlocks = 1
+
+function CodeBlock(s, attr)
+  local filename = meta.auxDir .. "/CodeBlock." .. codeBlocks
+  local file = assert(io.open(filename, "w"))
+  file:write(s)
+  file:close()
+  codeBlocks = codeBlocks + 1
+  return "\\pandocCodeBlock{" .. filename .. "}{" .. attr.class .. "}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+In \file{p2md.tex}, another expl3 macro is used, which determines if the provided language string (obtained from attribute \texttt{class}, this being the one case where we actually do not discard attributes) is empty or not. If not, \renderer{FencedCode} is used instead of \renderer{Verbatim}.
+The same block of expl3 syntax also contains a definition of \pandoc{RawBlock} used in the \texttt{RawBlock} function, which is virtually identical to \texttt{RawInline} (see section 3.1.1).
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\ExplSyntaxOn
+\def\pandocCodeBlock#1#2
+  {
+    \tl_if_empty:nTF
+      { #2 }
+      { \markdownRendererInputVerbatim { #1 } }
+      { \markdownRendererInputFencedCode { #1 } { #2 } }
+  }
+\def\pandocRawBlock#1#2
+  {
+    \tl_if_eq:nnT
+      { #1 }
+      { tex }
+      { #2 }
+  }
+\ExplSyntaxOff
+\end{lstlisting}
+
+$ $
+
+\noindent
+An interesting pattern appears in \texttt{Blockquote}, as well as several other block elements. Instead of a single macro, the Markdown package implements two macros, \renderer{BlockQuoteBegin} and \renderer{BlockQuoteEnd}, which are used before and after the contents of the block quote. This was done mainly to avoid memory overflows during macro expansion. The plain \TeX{} writer copies this pattern and implements its own pair of block quote macros.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function BlockQuote(s)
+  return "\\pandocBlockQuoteBegin\n" .. s .. "\n\\pandocBlockQuoteEnd"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocBlockQuoteBegin{\markdownRendererBlockQuoteBegin}%
+\def\pandocBlockQuoteEnd{\markdownRendererBlockQuoteEnd}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+The pattern appears again in macros for ordered and unordered lists, although here the macros are nested in two layers, with pairs of \renderer{(Ol/Ul)\-Begin} and \renderer{(Ol/Ul)\-End} surrounding a sequence of pairs of \renderer{(Ol/Ul)\-Item\-Begin} and \renderer{(Ol/Ul)\-Item\-End}, which contain the individual list items.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function OrderedList(items)
+  local buffer = {}
+  for _, item in pairs(items) do
+    table.insert(buffer, "\\pandocOrderedListItemBegin\n" .. item .. "\n\\pandocOrderedListItemEnd")
+  end
+  return "\\pandocOrderedListBegin\n" .. table.concat(buffer, '\n') .. "\n\\pandocOrderedListEnd"
+end
+
+function BulletList(items, num, sty, delim) -- TODO handle num, sty, delim
+  if #items == 0 then
+    return ""
+  end
+
+  local buffer = {}
+  for _, item in pairs(items) do
+    table.insert(buffer, "\\pandocBulletListItemBegin\n" .. item .. "\n\\pandocBulletListItemEnd")
+  end
+  return "\\pandocBulletListBegin\n" .. table.concat(buffer, '\n') .. "\n\\pandocBulletListEnd"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocOrderedListBegin{\markdownRendererOlBegin}%
+\def\pandocOrderedListItemBegin{\markdownRendererOlItem}%
+\def\pandocOrderedListItemEnd{\markdownRendererOlItemEnd}%
+\def\pandocOrderedListEnd{\markdownRendererOlEnd}%
+\def\pandocBulletListBegin{\markdownRendererUlBegin}%
+\def\pandocBulletListItemBegin{\markdownRendererUlItem}%
+\def\pandocBulletListItemEnd{\markdownRendererUlItemEnd}%
+\def\pandocBulletListEnd{\markdownRendererUlEnd}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+Definition lists ramp up this complexity once more, this time with a third layer of macros. Inside  each item of the list, which also takes a term as a parameter, one or more definitions for this term can occur -- again, each of them inside a pair of macros.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function DefinitionList(items)
+  local buffer = {}
+  for _,item in pairs(items) do
+    local term, defs = next(item)
+    table.insert(buffer, "\\pandocDefinitionListItemBegin{" .. term .. "}")
+    for _,def in pairs(defs) do
+        table.insert(buffer, "\\pandocDefinitionListDefinitionBegin\n" .. def ..
+                       "\n\\pandocDefinitionListDefinitionEnd{}")
+    end
+    table.insert(buffer, "\\pandocDefinitionListItemEnd{}")
+  end
+  return "\\pandocDefinitionListBegin\n" .. table.concat(buffer) .. "\n\\pandocDefinitionListEnd{}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocDefinitionListBegin{\markdownRendererDlBegin}%
+\def\pandocDefinitionListItemBegin#1{\markdownRendererDlItem{#1}}%
+\def\pandocDefinitionListDefinitionBegin{\markdownRendererDlDefinitionBegin}%
+\def\pandocDefinitionListDefinitionEnd{\markdownRendererDlDefinitionEnd}%
+\def\pandocDefinitionListItemEnd{\markdownRendererDlItemEnd}%
+\def\pandocDefinitionListEnd{\markdownRendererDlEnd}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+For document headings, the Markdown package has six macros, \renderer{HeadingOne} to \renderer{HeadingSix}. Design-wise, this might make sense as a mapping to \LaTeX{} macros like \macro{chapter}, \macro{section}, \macro{subsection} etc. However, the corresponding Pandoc element simply passes the heading level as an integer.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Header(lev, s, attr)
+  return "\\pandocHeader{" .. lev .. "}{" .. s .. "}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+Inside \file{p2md.tex}, the expl3 macro \macro{int-case-nn}\todo{find a way to typeset underscores and colons here} simply picks the right one of these macros depending on the level.
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\ExplSyntaxOn
+\def\pandocHeader#1#2
+  {
+    \int_case:nn
+      { #1 }
+      {
+        { 1 } { \markdownRendererHeadingOne { #2 } }
+        { 2 } { \markdownRendererHeadingTwo { #2 } }
+        { 3 } { \markdownRendererHeadingThree { #2 } }
+        { 4 } { \markdownRendererHeadingFour { #2 } }
+        { 5 } { \markdownRendererHeadingFive { #2 } }
+        { 6 } { \markdownRendererHeadingSix { #2 } }
+      }
+  }
+\ExplSyntaxOff
+\end{lstlisting}
+
+$ $
+
+\noindent
+\texttt{HorizontalRule} simply represents a horizonal rule, while \texttt{Div} represents a \texttt{<div>} element from HTML. As with \texttt{Span} before, attributes are discarded for now.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function HorizontalRule()
+  return "\\pandocHorizontalRule"
+end
+
+function Div(s, attr)
+  return "\\pandocDivBegin\n" .. s .. "\n\\pandocDivEnd{}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\ExplSyntaxOn
+\def\pandocHorizontalRule{\markdownRendererHorizontalRule}%
+\def\pandocDivBegin{}%
+\def\pandocDivEnd{}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+Finally, \texttt{Table}. This one do be kinda fucked up tho.\todo{elaborate}
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Table(caption, aligns, widths, headers, rows)
+  local coldef = ""
+  for col,def in pairs(aligns) do
+    if     def == "AlignLeft"    then coldef = coldef .. "l"
+    elseif def == "AlignRight"   then coldef = coldef .. "r"
+    elseif def == "AlignDefault" then coldef = coldef .. "c"
+    elseif def == "AlignCenter"  then coldef = coldef .. "d"
+    end
+  end
+
+  local buffer = {"\\pandocTable{"}
+  if caption ~= nil then table.insert(buffer, caption) end
+  table.insert(buffer, "}{" .. #rows .. "}{" .. #aligns .. "}{" .. coldef .. "}")
+
+  for i,row in ipairs(rows) do
+    local row_buffer = {"{"}
+    for j,cell in ipairs(row) do
+      table.insert(row_buffer, "{" .. cell .. "}")
+    end
+    table.insert(row_buffer, "}")
+    table.insert(buffer, table.concat(row_buffer))
+  end
+
+  return table.concat(buffer)
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+And in \file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\ExplSyntaxOn
+\def\pandocTable{\markdownRendererTable}%
+\end{lstlisting}
+
+$ $
+
+\section{Other functions}
+\emph{\texttt{Doc}, \texttt{meta}}
+
+\section{\LaTeX{} macropackage surrounding the writer}
+\emph{Shortly describe \file{p2md.sty} and the overrides that happen here.}
+\subsection{Inline elements}
+\subsection{Block elements}
 
 \section{Example documents}
 \emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \label{fig:html-browsers-typeset} \todo{Consider if this should not be a separate chapter.}}
