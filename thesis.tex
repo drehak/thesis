@@ -514,7 +514,7 @@ The first inline element is \texttt{Str}, which simply defines a string without 
 $ $
 
 \noindent
-\lstset{language=[5.2]Lua}
+\lstset{language=[5.3]Lua}
 \begin{lstlisting}
 local function escape(s, in_attribute)
   return s:gsub('[<>&"\']',
@@ -538,6 +538,7 @@ end
 
 $ $
 
+\noindent
 There is a problem with this construct -- \texttt{gsub} replaces all occurences of the given characters in \texttt{s}. However, if the modified function for plain \TeX{} output would in this way replace \texttt{\{} with \texttt{\textbackslash{}pandocLeftBrace\{\}}, this would generate another occurence of \texttt{\{}, which would also get replaced with \texttt{\textbackslash{}pandocLeftBrace\{\}}\dots and so on. This can be mitigated by saving the substitution into a variable and returning it at the end of the inner function. (Some characters in the pattern provided to \texttt{gsub} have to be escaped with \%.)
 
 $ $
@@ -583,6 +584,85 @@ end
 \end{lstlisting}
 
 $ $
+
+\noindent
+Next inline element is \texttt{Emph}, representing emphasis. \texttt{Emph} contains a list of inline elements, but any special characters have already been escaped by \texttt{Str} executed on the strings inside, so there is no need to do that again. Here, the Lua operator \texttt{..} performs concatenation.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Emph(s)
+  return "\\pandocEmph{" .. s .. "}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\macro{pandocEmph} is defined in \texttt{pandoc-to-markdown.tex}, as outlined above:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocEmph{\markdownRendererEmphasis}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+Next is \texttt{Underline}. The original Markdown language has no way to represent an underline, so there is no support for it in the Markdown package.\footnote{As of version 2.11.0.} For now, we will simply define a macro which expands to its parameter, rendering it as a plain string.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Underline(s)
+  return "\\pandocUnderline{" .. s .. "}"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\texttt{pandoc-to-markdown.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocUnderline#1{#1}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+For the next few inline elements, the structure of the writer functions is virtually the same, so it is not worth listing them here. The macros look similar too. The only new construct occurs in \macro{pandocSingleQuoted} and \macro{pandocDoubleQuoted}, which surround their parameter with \texttt{`} and \texttt{'}, the characters used by \TeX{} to represent quotes:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocStrong{\markdownRendererStrongEmphasis}%
+\def\pandocStrikeout#1{#1}%
+\def\pandocSubscript#1{#1}%
+\def\pandocSuperscript#1{#1}%
+\def\pandocSmallCaps#1{#1}%
+\def\pandocSingleQuoted#1{`#1'}%
+\def\pandocDoubleQuoted#1{``#1''}%
+\end{lstlisting}
+
+$ $
+
+% With \texttt{Cite}, things start to get a little bit complicated
+
+
 
 \subsection{Block elements}
 
