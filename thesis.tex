@@ -1305,8 +1305,51 @@ $ $
 
 $ $
 
-\section{Other functions}
-\emph{\texttt{Doc}, \texttt{meta}}
+\subsection{Other objects}
+There is more to a custom writer than just functions for rendering elements. Here, I will shortly describe those extra objects.
+
+While not an element per se, any custom writer API also has to define a function called \texttt{Doc}. This function is only called once for the whole document and is able to add extra contents before/after the body of the document. (For example, the sample custom writer for HTML uses it to append contents of footnotes at the end.) The Markdown package offers a similar capability via a pair of macros that can be predefined at will, so the plain \TeX{} writer simply invokes those.
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+function Doc(body, metadata, variables)
+  return "\\pandocDocumentBegin\n"
+      .. body .. "\n"
+      .. "\\pandocDocumentEnd"
+end
+\end{lstlisting}
+
+$ $
+
+\noindent
+\file{p2md.tex}:
+
+$ $
+
+\noindent
+\lstset{language=[plain]TeX}
+\begin{lstlisting}
+\def\pandocDocumentBegin{\markdownRendererDocumentBegin}%
+\def\pandocDocumentEnd{\markdownRendererDocumentEnd}%
+\end{lstlisting}
+
+$ $
+
+\noindent
+Finally, there are ways to provide various key-value metadata to Pandoc at runtime -- for example via the \texttt{-{}-metadata=KEY[:VAL]} option (\texttt{-M KEY[=VAL]} for short). Pandoc then exposes these metadata to writers, in the case of custom writers via the \texttt{PANDOC\_DOCUMENT.meta} table. This is where \texttt{CodeBlock} gets the name of the directory in which it can create files (see section 3.1.2).
+
+$ $
+
+\noindent
+\lstset{language=[5.3]Lua}
+\begin{lstlisting}
+local meta = PANDOC_DOCUMENT.meta
+\end{lstlisting}
+
+$ $
 
 \section{\LaTeX{} macropackage surrounding the writer}
 \emph{Shortly describe \file{p2md.sty} and the overrides that happen here.}
