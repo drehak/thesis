@@ -263,43 +263,26 @@ The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdow
 
 Because the Markdown package offers first-class support for plain \TeX{} and already tackles the task of converting high-level Markdown elements into low-level \TeX{} macros, it was suitable for its use in a working prototype of the plain \TeX{} writer for Pandoc. That is, the writer can simply produce macros defined by the Markdown package, which can then be expanded into \TeX{} primitives.
 
-Regarding usage, the main intended way to use the Markdown package with plain \TeX{} is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive and takes a filename as an argument, or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown-formatted text directly embedded into the document source. Since we are mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
+Regarding usage, the main intended way to use the Markdown package with plain \TeX{} is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive and takes a filename as an argument; or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown-formatted text directly embedded into the document source. Since we are mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
 
 \subsection{Lunamark writer -- a previously explored approach}
 Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which is coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark provides a fast conversion of Markdown (its only input format) into other commonly used markup formats. Since the Lua\TeX{} engine is able to directly execute Lua code, Lunamark's parser was suitable for its use in the Markdown package.
 
-\todo{reformulate, describe this as a standalone project}Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc into the Markdown package. Such support allows users to embed blocks of all input formats, that are supported by Pandoc, into \TeX{} documents. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before we\todo{Who is ``we''? Should I actually mention my supervisor here?} discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs Markdown's macros, with a shim layer on top. (The details of this are all described in chapter 3). Eventually, it became clear that it is not necessary to extend Markdown with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be entirely reformulated.
+\todo{reformulate, describe this as a standalone project}Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc directly into the Markdown package. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before and my supervisor discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs Markdown's macros, with a shim layer on top. (The details of this are all described in chapter 3). Eventually, it became clear that it is not necessary to extend Markdown with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be slightly reformulated.
 
 \section{Comparison of Pandoc and Markdown}
 
-\begin{itemize}
-\item they kinda do the same thing
-\item common elements
-\item elements that work differently
-\item elements without equivalents in Markdown
-\end{itemize}
+Elements of Pandoc's AST are somewhat similar to Markdown's macros for elements. Some of them are simple enough that conversion from the Pandoc element to the corresponding macro is possible just by passing the parameters -- that is, if the element even has any. An example of such an element would be \texttt{Emph}, which directly corresponds to the macro \renderer{Emphasis}.
 
-Elements of Pandoc's AST are somewhat similar to Markdown's macros for elements. Some of them are simple enough that it is possible to pass their contents to the corresponding macro -- that is, if they even have any.
+For other elements, the mapping is a bit more complicated. Some Pandoc elements take a parameter of a type with multiple constant constructors. (In imperative languages, the closest equivalent would be an enumerable type.) For example, one of the parameters of \texttt{Cite} is of the type \texttt{CitationMode}, which itself has three constructors without parameters - \texttt{AuthorInText}, \texttt{SuppressAuthor} and \texttt{NormalCitation}. Markdown's \renderer{Cite} macro represents this in such a way that one of its parameters is either \texttt{\{-\}}, when the author of the citation is to be suppressed, or \texttt{\{+\}} otherwise.
 
-An example of such an element would be \texttt{Emph}, which directly corresponds to the macro \renderer{Emphasis}. There is a few more elements with such equivalents, although in the case of \texttt{CodeBlock}, the order of its two parameters needs to be swapped:
+Another example of the above would be \texttt{MathType} passed as a parameter of \texttt{Math} with two constructors, \texttt{DisplayMath} and \texttt{InlineMath}\footnote{In this case, the API for custom Pandoc writers splits handling of \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}. Depending on the value of \texttt{MathType}, Pandoc simply calls one of these two functions.}. Similarly, \texttt{Quoted} has a parameter \texttt{QuoteType} with two constructors, \texttt{SingleQuote} and \texttt{DoubleQuote}\footnote{Again, the API splits \texttt{Quoted} into two functions -- \texttt{SingleQuote} and \texttt{DoubleQuote}.} -- although \texttt{Quoted} has no equivalent among Markdown's macros.
 
-\begin{itemize}
-\item \texttt{Emph} $\rightarrow$ \renderer{Emphasis}
-\item \texttt{Strong} $\rightarrow$ \renderer{StrongEmphasis}
-\item \texttt{HorizontalRule} $\rightarrow$ \renderer{HorizontalRule}
-\item \texttt{LineBreak} $\rightarrow$ \renderer{LineBreak}
-\item \texttt{Note} $\rightarrow$ \renderer{Footnote}
-\item \texttt{Code} $\rightarrow$ \renderer{CodeSpan}
-\item \texttt{CodeBlock} $\rightarrow$ \renderer{InputFencedCode}
-\end{itemize}
+In other cases, entire elements are simply represented differently in Markdown. For example, the element \texttt{Header} contains its contents and an integer representing its level. (This maps nicely to the HTML tags \texttt{<h1>} to \texttt{<h6>}.) Markdown represents this using six individual macros, \renderer{HeadingOne} to \renderer{HeadingSix}.\todo{more groups?}
 
-For other elements, the mapping to Markdown's macros is a bit more complicated.\todo{add more to this}
+Sometimes this relates to how strings are escaped in \TeX{}. For example, the \renderer{Link} macro, which produces a clickable link, takes four parameters. One of them is the link itself, which is what the browser opens when the link is clicked. However, the URL cannot be typeset because of special characters play have a special role in \TeX{}. For that reason, the escaped URL is passed to the macro as another parameter.
 
-Some Pandoc elements take a parameter of a type with multiple constant constructors. (In imperative languages, the closest equivalent would be an enumerable type.) For example, one of the parameters of \texttt{Cite} is of the type \texttt{CitationMode}, which itself has three constructors without parameters - \texttt{AuthorInText}, \texttt{SuppressAuthor} and \texttt{NormalCitation}. Another example would be \texttt{MathType} passed as a parameter of \texttt{Math} with two constructors, \texttt{DisplayMath} and \texttt{InlineMath}\footnote{In this case, the API for custom Pandoc writers splits handling of \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}. Depending on the value of \texttt{MathType}, Pandoc simply calls one of these two functions.}. Similarly, \texttt{Quoted} has a parameter \texttt{QuoteType} with two constructors, \texttt{SingleQuote} and \texttt{DoubleQuote}\footnote{Again, the API splits \texttt{Quoted} into two functions -- \texttt{SingleQuote} and \texttt{DoubleQuote}.} -- although \texttt{Quoted} has no equivalent among Markdown's macros.
-
-Other elements are simply represented differently in Markdown. For example, the element \texttt{Header} contains its contents and an integer representing its level. (This maps nicely to the HTML tags \texttt{<h1>} to \texttt{<h6>}.) Markdown represents this using six individual macros, \renderer{HeadingOne} to \renderer{HeadingSix}.\todo{more groups?}
-
-Finally, there is a group of elements without any corresponding macros, like the afforementioned \texttt{Quoted}. This is understandable, since the syntax of Markdown does not cover these types of elements. A few more trivial examples would be \texttt{Underline}, \texttt{Strikeout}, \texttt{Superscript}, \texttt{Subscript} and \texttt{SmallCaps}.\todo{revise for latest Markdown version ($\rightarrow$ Future work))}
+Finally, there is a group of elements without any corresponding macros, like the aforementioned \texttt{Quoted}. This is understandable, since the syntax of Markdown does not cover these types of elements. A few more trivial examples would be \texttt{Underline}, \texttt{Strikeout}, \texttt{Superscript}, \texttt{Subscript} and \texttt{SmallCaps}.\todo{revise for latest Markdown version ($\rightarrow$ Future work))}
 
 \begin{figure}
   \centering
@@ -846,7 +829,7 @@ In the case of our plain \TeX{} writer, it is sensible to directly typeset raw e
 
 Here, as programming of \TeX{} macros is not my forte, expl3 syntax makes an appearance in \file{p2md.tex}. expl3 redefines how some characters are processed. For example, underscores and colons are valid characters inside identifiers of expl3 functions. The significance of whitespace is also reduced. Because of this, all expl3 code has to be surrounded by \macro{ExplSyntaxOn} and \macro{ExplSyntaxOff}.
 
-As for \macro{tl-if-eq-nnT}\todo{find a way to typeset underscores and colons here}, it is a variant of the macro \macro{tl-if-eq-nnTF}, which takes four parameters and returns the third, if the first two are equal, or the fourth, if they are not. \macro{tl-if-eq-nnT} is a variant that completely omits the ``false'' branch and outputs nothing if the elements are not equal, so it only takes three parameters. I have used the indentation style recommended by the expl3 manual\todo{cite}, so snippets using expl3 syntax will be broken into multiple lines.
+As for \macro{tl\_if\_eq:nnT}, it is a variant of the macro \macro{tl\_if\_eq:nnTF}, which takes four parameters and returns the third, if the first two are equal; or the fourth, if they are not. \macro{tl\_if\_eq:nnT} is a variant that completely omits the ``false'' branch and outputs nothing if the elements are not equal, so it only takes three parameters. I have used the indentation style recommended by the expl3 manual\todo{cite}, so snippets using expl3 syntax will be broken into multiple lines.
 
 $ $
 
@@ -905,7 +888,7 @@ $ $
 $ $
 
 \noindent
-The last two inline elements are \texttt{Note} and \texttt{Span}, representing footnotes and HTML span of texts respectively. Again, the attributes of \texttt{Span} are discarded for now, which is unfortunate, since attributes are the main reason of using \texttt{<span>} in HTML in the first place.
+The last two inline elements are \texttt{Note} and \texttt{Span}, representing footnotes and HTML span of texts respectively. Neither of them is represented by the Markdown package for now. Again, the attributes of \texttt{Span} are discarded for now, which is unfortunate, since attributes are the main reason of using \texttt{<span>} in HTML in the first place.
 
 $ $
 
@@ -1193,7 +1176,7 @@ end
 $ $
 
 \noindent
-Inside \file{p2md.tex}, the expl3 macro \macro{int-case-nn}\todo{find a way to typeset underscores and colons here} simply picks the right one of these macros depending on the level.
+Inside \file{p2md.tex}, the expl3 macro \macro{int\_case:nn} simply picks the right one of these macros depending on the level.
 
 $ $
 
