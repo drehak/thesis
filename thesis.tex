@@ -32,7 +32,7 @@
                %% with `colorbold` to use blue for bold text.
   lof,         %% The `lof` option prints the List of Figures. Replace
                %% with `nolof` to hide the List of Figures.
-  lot,         %% The `lot` option prints the List of Tables. Replace
+  nolot,       %% The `lot` option prints the List of Tables. Replace
                %% with `nolot` to hide the List of Tables.
 ]{fithesis4}
 %% The following section sets up the locales used in the thesis.
@@ -164,7 +164,8 @@ $ echo 'Hello *world*!' | pandoc
 
 $ $
 
-Other builtin formats for input and output can be specificied using the \texttt{-{}-from} and \texttt{-{}-to} options (\texttt{-f} and \texttt{-t} for short). Naturally, one can also specify names of the input (argument without an option) and output (\texttt{-{}-output} or \texttt{-o}) files. For example, suppose we have the input file \texttt{shopping-list.html} formatted using HTML with the following contents:
+\noindent
+Other builtin formats for input and output can be specificied using options \texttt{-{}-from} and \texttt{-{}-to} (\texttt{-f} and \texttt{-t} for short). Naturally, one can also specify names of the input (argument without an option) and output (\texttt{-{}-output} or \texttt{-o}) files. For example, suppose we have an input file named \texttt{shopping-list.html} with the following contents:
 
 $ $
 
@@ -183,20 +184,21 @@ $ $
 $ $
 
 \noindent
-Then, the following command will the output file \texttt{shopping-list.1} formatted using macros of the \textit{roff} typesetting system used for Unix manual pages:
+Then the following command will produce an output file named \texttt{shopping-list.1} formatted using macros of the \textit{roff} typesetting system used for Unix manual pages:
 
 $ $
 
 \noindent
 \lstset{language=}
 \begin{lstlisting}
-pandoc -f html -t man shopping-list.html -o shopping-list.1
+pandoc -f html -t man shopping-list.html \
+  -o shopping-list.1
 \end{lstlisting}
 
 $ $
 
 \noindent
-The contents of the output file \texttt{shopping-list.1} will be:
+The contents of \texttt{shopping-list.1} will be:
 
 $ $
 
@@ -214,9 +216,10 @@ Butter
 
 $ $
 
-If we want to define our own input/output format, we ultimately have two options. The first one is to directly extend the code of Pandoc itself with a new reader/writer module. This would require at least working knowledge Pandoc's codebase, as well as Haskell. Moreover, such a solution would not be very portable, as to actually use such a module, it would be necessary to recompile Pandoc. Of course, there is the possibility that Pandoc maintainers would consider the module worthy enough and of a sufficient quality (and the format significant enough) to include it into Pandoc itself. Even then, the format would only be available in new versions of Pandoc.
+\noindent
+If we want to define our own input/output format, we ultimately have two options. The first one is to directly extend the code of Pandoc itself with a new reader/writer module. This would require at least working knowledge of Pandoc's codebase, as well as the Haskell language. Moreover, such a solution would not be very portable, as in order to actually use such a module, it would be necessary to recompile Pandoc. Of course, there is the possibility that Pandoc maintainers would consider the module worthy enough and of a sufficient quality (and the format significant enough) to include it into Pandoc itself. Even then, the format would only be available in new versions of Pandoc.
 
-The other option is to write a reader/writer in the Lua programming language using the supported Lua API, which is described in Pandoc's documentation\footnote{\url{https://pandoc.org/custom-writers.html}}. Then, if we simply use the path to the Lua reader/writer as an input/output format, Pandoc's built-in Lua interpreter will parse and use that reader/writer at runtime. For example, if we defined a plain \TeX{} writer in the file \texttt{plaintex.lua} and then wanted to use plain \TeX{} as the output format, it would be enough to call:
+The other option is to write a reader/writer in the Lua programming language using the supported Lua API, which is described in Pandoc's documentation\footnote{\url{https://pandoc.org/custom-writers.html}}. Then, by simply using the path to the Lua reader/writer as an input/output format, Pandoc's built-in Lua interpreter will parse and use that reader/writer at runtime. For example, if we defined a plain \TeX{} writer in the file \texttt{plaintex.lua} and then wanted to use plain \TeX{} as the output format, it would be enough to call:
 
 $ $
 
@@ -228,19 +231,16 @@ $ echo 'Hello *world*!' | pandoc -t plaintex.lua
 $ $
 
 \noindent
-We will construct such a writer in Chapter 3.
+We will construct such a writer in chapter 3.
 
-$ $
-
-As an aside, for some output formats (like \LaTeX{}, HTML or roff macros above), the default output produced by Pandoc does not constitute a complete document ready for viewing/typesetting, but rather just a short snippet. This can be amended by the \texttt{-{}-standalone} option (\texttt{-s}~for short), which surrounds the snippet with a template containing the skeleton of a full document. (Most of the templates are too long to reasonably embed an example of such an output here.)
+As an aside, for some output formats (like \LaTeX{}, HTML or roff macros above), the default output produced by Pandoc does not constitute a complete document ready for viewing/typesetting, but rather just a short snippet. This can be amended by the \texttt{-{}-standalone} option (\texttt{-s}~for short), which surrounds the snippet with a template of a full document. (All of the templates are too long to reasonably embed an example of such an output here.)
 
 \section{\TeX{}}
-\TeX{} is a typesetting system designed and released by Donald Knuth in 1978. One of the main motivations for the creation of \TeX{} was the difficulty surrounding typesetting of mathematics at the time of its inception.\todo{something else?}
+\TeX{} is a typesetting system designed and released by Donald Knuth in 1978. One of the main motivations for the creation of \TeX{} was the difficulty surrounding the typesetting of mathematics at the time of its inception.\todo{too short, think of more}
 
-The input files of \TeX{} are plain text and their main elements are text to be typeset and control sequences, which influence how the text is to be typeset. 
-Control sequences begin with their identifier, which consists of a backslash and a sequence of letters (uppercase or lowercase). Additionally, some control sequences take one or more of following tokens as parameters. The \TeX{} engine itself has around 300 of built-in control sequences, so-called \textit{primitives}.
+The input files of \TeX{} are plain text and their main elements are text and control sequences, which influence how the text is to be typeset. Control sequences begin with their identifier, which consists of a backslash and a sequence of letters (uppercase or lowercase). Additionally, some control sequences take one or more of following tokens as parameters. The \TeX{} engine itself has around 300 of built-in control sequences, so-called \textit{primitives}.
 
-An example of a primitive is \macro{end}, which is used for halting the \TeX{} engine and which takes no parameters. Another example is the primitive \macro{kern}, which inserts a blank fill of a given length. When the \TeX{} engine encounters \macro{kern1em}, it inserts a blank fill, which is 1em wide.
+An example of a primitive is \macro{end}, which is used for halting the \TeX{} engine and which takes no parameters. Another example is the primitive \macro{kern}, which consumes a single token and then inserts a blank fill of the length given by the token. For example, when the \TeX{} engine encounters \macro{kern1em}, it inserts a 1em wide blank fill.
 
 Besides primitives, there can also be \textit{macros}, which are control sequences that recursively expand into other control sequences and groups of characters. Macros can be defined using the sequence \macro{def}, which can happen directly in the input file, or in a \textit{format}, which is essentially a collection of definitions in a single file. Knuth himself has defined such a format called \textit{plain \TeX{}} as the default format for \TeX{}.
 
@@ -252,37 +252,37 @@ An example of a macro is \macro{quad}, which is defined in plain \TeX{} as follo
 \def\enspace{\kern.5em}
 \end{lstlisting}
 
-When the macro is defined (e.g. by loading the format) and \macro{quad} is encountered by the \TeX{} engine, it is expanded into \macro{kern.5em}. This results in a 0.5em wide blank fill as outlined above.
+When the macro is defined (e.g. by loading the format) and \macro{enspace} is encountered by the \TeX{} engine, it is expanded into \macro{kern.5em}. This results in a 0.5em (or 1en, hence the name) wide blank fill as outlined above.
 
-Several formats have been created specifically to provide abstractions above plain \TeX{} that allow greater focus on content rather than formatting itself, since plain \TeX{} can be cumbersome for creating documents. The most popular such system is \LaTeX{}, first released in 1984.
+Several formats have been created specifically to provide abstractions above plain \TeX{} that allow greater focus on content rather than formatting itself, since plain \TeX{} can be cumbersome for creating documents. Nowadays, the most popular such system is \LaTeX{}, first released in 1984.
 
-There exist multiple compatible implementations of the \TeX{} engine, some of which also implement their own primitives. An example is pdf\TeX{}, which is capable of direct output to PDF and also provides primitives for micro-typography. Another example is Lua\TeX{}, which will be of interest in chapter 3, since it is able to directly execute code written in the Lua language.
+There are multiple compatible implementations of the \TeX{} engine, some of which add new features and implement their own primitives. An example is pdf\TeX{}, which is capable of direct output in the PDF format and also provides primitives for micro-typography. Another example is Lua\TeX{}, which will be of interest in chapter 3, since it is able to directly execute code written in the Lua language.
 
 \section{The Markdown package for \TeX{}}
-The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of being easy to read and write. This has eventually caused wide adoption of the language on the Internet. The Markdown package provides a way to embed blocks of text written in the Markdown language directly into \TeX{} documents. During typesetting, these blocks are parsed and eventually expanded into native \TeX{} macros correspoding to the input. 
+The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of being easy to read and write. This has eventually caused wide adoption of the language on the Internet. The package provides a way to embed blocks of text written in the Markdown language directly into \TeX{} documents, resulting in another layer of abstraction. During typesetting, these blocks are parsed and eventually expanded into native \TeX{} macros correspoding to the Markdown input. 
 
 Because the Markdown package offers first-class support for plain \TeX{} and already tackles the task of converting high-level Markdown elements into low-level \TeX{} macros, it was suitable for its use in a working prototype of the plain \TeX{} writer for Pandoc. That is, the writer can simply produce macros defined by the Markdown package, which can then be expanded into \TeX{} primitives.
 
 Regarding usage, the main intended way to use the Markdown package with plain \TeX{} is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive and takes a filename as an argument; or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown-formatted text directly embedded into the document source. Since we are mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
 
 \subsection{Lunamark writer -- a previously explored approach}
-Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which is coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark provides a fast conversion of Markdown (its only input format) into other commonly used markup formats. Since the Lua\TeX{} engine is able to directly execute Lua code, Lunamark's parser was suitable for its use in the Markdown package.
+Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which was coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark is capable of fast conversion of Markdown, its only input format, into other commonly used markup formats. Since the Lua\TeX{} engine is able to directly execute Lua code, Lunamark's parser was suitable for its use in the Markdown package.
 
-\todo{reformulate, describe this as a standalone project}Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc directly into the Markdown package. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before and my supervisor discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs Markdown's macros, with a shim layer on top. (The details of this are all described in chapter 3). Eventually, it became clear that it is not necessary to extend Markdown with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be slightly reformulated.
+Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc directly into the Markdown package. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before and my supervisor discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs macros that then get transformed into Markdown's macros. (The details of this are described in chapter 3). Eventually, it became clear that it is not necessary to directly extend Markdown's codebase with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be slightly reformulated.
 
 \section{Comparison of Pandoc and Markdown}
 
 Elements of Pandoc's AST are somewhat similar to Markdown's macros for elements. Some of them are simple enough that conversion from the Pandoc element to the corresponding macro is possible just by passing the parameters -- that is, if the element even has any. An example of such an element would be \texttt{Emph}, which directly corresponds to the macro \renderer{Emphasis}.
 
-For other elements, the mapping is a bit more complicated. Some Pandoc elements take a parameter of a type with multiple constant constructors. (In imperative languages, the closest equivalent would be an enumerable type.) For example, one of the parameters of \texttt{Cite} is of the type \texttt{CitationMode}, which itself has three constructors without parameters - \texttt{AuthorInText}, \texttt{SuppressAuthor} and \texttt{NormalCitation}. Markdown's \renderer{Cite} macro represents this in such a way that one of its parameters is either \texttt{\{-\}}, when the author of the citation is to be suppressed, or \texttt{\{+\}} otherwise.
+For other elements, the mapping is a bit more complicated. Some Pandoc elements take a parameter of a type with multiple constant constructors. (In imperative languages, the closest equivalent would be an enumerable type.) For example, one of the parameters of \texttt{Cite} is of the type \texttt{CitationMode}, which itself has three constructors without parameters -- \texttt{AuthorInText}, \texttt{SuppressAuthor} and \texttt{NormalCitation}. Markdown's \renderer{Cite} macro represents the same thing in such a way that one of its parameters is either \texttt{\{-\}}, when the author of the citation is to be suppressed, or \texttt{\{+\}} otherwise.
 
-Another example of the above would be \texttt{MathType} passed as a parameter of \texttt{Math} with two constructors, \texttt{DisplayMath} and \texttt{InlineMath}\footnote{In this case, the API for custom Pandoc writers splits handling of \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}. Depending on the value of \texttt{MathType}, Pandoc simply calls one of these two functions.}. Similarly, \texttt{Quoted} has a parameter \texttt{QuoteType} with two constructors, \texttt{SingleQuote} and \texttt{DoubleQuote}\footnote{Again, the API splits \texttt{Quoted} into two functions -- \texttt{SingleQuote} and \texttt{DoubleQuote}.} -- although \texttt{Quoted} has no equivalent among Markdown's macros.
+Another example of this would be \texttt{MathType}, which is passed as a parameter of \texttt{Math} and which has two constructors, \texttt{DisplayMath} and \texttt{InlineMath}\footnote{In this case, the API for custom Pandoc writers splits handling of \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}. Depending on the value of \texttt{MathType}, Pandoc simply calls one of these two functions.}. Similarly, \texttt{Quoted} has a parameter \texttt{QuoteType} with two constructors, \texttt{SingleQuote} and \texttt{DoubleQuote}\footnote{Again, the API splits \texttt{Quoted} into two functions -- \texttt{SingleQuote} and \texttt{DoubleQuote}.} -- although \texttt{Quoted} has no equivalent among Markdown's macros.
 
-In other cases, entire elements are simply represented differently in Markdown. For example, the element \texttt{Header} contains its contents and an integer representing its level. (This maps nicely to the HTML tags \texttt{<h1>} to \texttt{<h6>}.) Markdown represents this using six individual macros, \renderer{HeadingOne} to \renderer{HeadingSix}.\todo{more groups?}
+In other cases, entire elements are represented differently in Markdown. For example, the element \texttt{Header} contains its contents and an integer representing its level. (This maps nicely to the HTML tags \texttt{<h1>} to \texttt{<h6>}.) Markdown represents this using six individual macros, \renderer{HeadingOne} to \renderer{HeadingSix}.\todo{more (groups of) examples?}
 
-Sometimes this relates to how strings are escaped in \TeX{}. For example, the \renderer{Link} macro, which produces a clickable link, takes four parameters. One of them is the link itself, which is what the browser opens when the link is clicked. However, the URL cannot be typeset because of special characters play have a special role in \TeX{}. For that reason, the escaped URL is passed to the macro as another parameter.
+Sometimes, the differences relate to how strings are escaped in \TeX{}. For example, the \renderer{Link} macro, which produces a clickable link, takes four parameters. One of them is the URL, which a browser opens when the link is clicked. However, the URL cannot be typeset directly, since it will often contain special characters that play a special role in \TeX{}. For that reason, the escaped URL is passed to the macro as another parameter.
 
-Finally, there is a group of elements without any corresponding macros, like the aforementioned \texttt{Quoted}. This is understandable, since the syntax of Markdown does not cover these types of elements. A few more trivial examples would be \texttt{Underline}, \texttt{Strikeout}, \texttt{Superscript}, \texttt{Subscript} and \texttt{SmallCaps}.\todo{revise for latest Markdown version ($\rightarrow$ Future work))}
+Finally, there is a group of elements without any corresponding macros in the Markdown package, like the aforementioned \texttt{Quoted}. This is understandable, since the syntax of the Markdown language does not cover these types of elements. A few more trivial examples would be \texttt{Underline}, \texttt{Strikeout}, \texttt{Superscript}, \texttt{Subscript} and \texttt{SmallCaps}.\todo{revise for latest Markdown version ($\rightarrow$ Future work))}\footnote{Pandoc's Markdown reader actually supports these elements. However, that is rather the exception than the rule. The original Markdown format, as well as most other Markdown variants, do not support these elements.}
 
 \begin{figure}
   \centering
