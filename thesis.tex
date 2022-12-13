@@ -136,11 +136,9 @@
 %% \printnoidxglossary[title={Glossary}]
 
 \chapter{Introduction}
-This thesis concerns the typesetting system \TeX{}, as well its package Markdown. Moreover, it concerns Pandoc, a universal document converter, and an integration of Pandoc's capabilities with the Markdown package.
+\TeX{} is a digital typesetting system capable of producing high-quality documents. It is especially widespread in academia because of its abilities in the typesetting of mathematics. However, its language can be verbose and cryptic for new and inexperienced users. The Markdown package addresses this by allowing users to supplement their \TeX{} documents with blocks of text written in Markdown, a markup language that is widespread on the Internet and easy to read and write.
 
-\TeX{} is a digital typesetting system capable of producing high-quality documents. It is especially widespread in academia becuase of its abilities in the typesetting of mathematics. However, its language can be verbose and cryptic for new and inexperienced users. The Markdown package addresses this by allowing users to supplement their \TeX{} documents with blocks of text written in Markdown, a markup language that is widespread on the Internet and easy to read and write.
-
-Pandoc is a utility able to convert between numerous document formats, including HTML, Markdown, or \LaTeX{} and Con\TeX{}t, two popular formats of \TeX{}. However, its \TeX{} output only produces rudimentary documents that do not leverage the full power of \TeX{} macros. It is true that the output can be edited further, but repeated conversion would undo such edits.
+Pandoc is a utility able to convert between numerous document formats, including HTML, Markdown, or \LaTeX{} and Con\TeX{}t, two popular formats of \TeX{}. However, Pandoc's \TeX{} output \todo{reformulate}only produces rudimentary documents that do not leverage the full power of \TeX{} macros. It is true that the output can be edited further, but repeated conversion would undo such edits.
 Moreover, there is no way to influence Pandoc's \TeX{} output without reprogramming and recompiling Pandoc itself.
 Lastly, Pandoc does not provide a way to output documents for plain \TeX{} (i.e. without \LaTeX{} or Con\TeX{}t on top).
 
@@ -149,10 +147,10 @@ The goal of this thesis is to integrate Pandoc with the Markdown package. Such a
 In Chapter 2, the author introduces Pandoc, \TeX{} and the Markdown package and outlines the proof of concept of the integration. Chapter 3 describes this proof of concept in greater detail and demonstrates its practical usage on a set of example documents. Chpater 4 concludes the thesis and outlines future work necessary for eventual inclusion of the writer from the proof of concept into Pandoc itself.
 
 \chapter{State of the art}
-This chapter briefly introduces Pandoc and the relevant parts of its architecture. It also introduces the \TeX{} and \LaTeX{} typesetting systems and finally the Markdown package, which works with both of these systems and which will be utilized to quickly produce a simple proof of concept for the Pandoc writer.
+This chapter briefly introduces Pandoc and the relevant parts of its architecture. It also introduces the \TeX{} and \LaTeX{} typesetting systems and finally the Markdown package, which works with both of these systems and which will be utilized to quickly produce a simple proof of concept for the integration of Pandoc and Markdown.
 
 \section{Pandoc}
-\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as HTML, docx, various Markdown flavours, some \TeX{} formats (e.g. \LaTeX{} and Con\TeX{}t), or roff macros for Unix manual pages. Pandoc consists of a core library written in the Haskell language and a command line tool providing access to this library.
+\emph{Pandoc}~\cite{pandoc} is a utility which can convert between dozens of markup and document formats, such as HTML, DOCX, various Markdown flavours, some \TeX{} formats (e.g. \LaTeX{} and Con\TeX{}t), or roff macros for Unix manual pages. Pandoc consists of a core library written in the Haskell language and a command-line tool providing access to this library.
 
 Internally, the conversion in Pandoc is performed in two phases. First, the input format is converted into a native represenation, also called an \emph{abstract syntax tree} (or AST for short). Then, this AST is converted into the output format. Such a design allows for the input format readers to be written as modules independent of individual output format writers, and vice versa. This also makes it easy to extend the set of Pandoc's supported formats.
 
@@ -162,7 +160,7 @@ The AST itself is exposed via a special format named \texttt{native}, which inpu
 
 \subsection{Usage}
 
-The simplest way to use Pandoc is through the provided command line utility. When no arguments are provided, Pandoc takes text formatted with the Markdown markup language from standard input and outputs the HTML equivalent on the standard output:
+The simplest way to use Pandoc is through the provided command-line utility. When no arguments are provided, Pandoc takes text formatted with the Markdown markup language from standard input and outputs the HTML equivalent on the standard output:
 
 $ $
 
@@ -246,15 +244,15 @@ We will construct such a writer in Chapter 3.
 As an aside, for some output formats (like \LaTeX{}, HTML or roff macros above), the default output produced by Pandoc does not constitute a complete document ready for viewing/typesetting, but rather just a short snippet. This can be amended by the \texttt{-{}-standalone} option (\texttt{-s}~for short), which surrounds the snippet with a template of a full document. (All of the templates are too long to reasonably embed an example of such an output here.)
 
 \section{\TeX{}}
-\TeX{} is a typesetting system designed and released by Donald Knuth in 1978. One of the main motivations for the creation of \TeX{} was the difficulty surrounding the typesetting of mathematics at the time of its inception.\todo{too short, think of more}
+\TeX{} is a typesetting system designed and implemented by Donald Knuth in 1978. One of the main motivations for the creation of \TeX{} was the difficulty surrounding the typesetting of mathematics at the time of its inception.\todo{too short, think of more}
 
-The input files of \TeX{} are plain text and their main elements are text and control sequences, which influence how the text is to be typeset. Control sequences begin with their identifier, which consists of a backslash and a sequence of letters (uppercase or lowercase). Additionally, some control sequences take one or more of following tokens as parameters. The \TeX{} engine itself has around 300 of built-in control sequences, so-called \textit{primitives}.
+The input files of \TeX{} are plain text and their main elements are text and control sequences, which influence how the text is to be typeset. Control sequences typically begin with a backslash and a sequence of letters (uppercase or lowercase). Additionally, some control sequences take one or more of following tokens as parameters. The \TeX{} engine itself has around 300 of built-in control sequences, so-called \textit{primitives}.
 
-An example of a primitive is \macro{end}, which is used for halting the \TeX{} engine and which takes no parameters. Another example is the primitive \macro{kern}, which consumes a single token and then inserts a blank fill of the length given by the token. For example, when the \TeX{} engine encounters \macro{kern1em}, it inserts a 1em wide blank fill.
+An example of a primitive is \macro{end}, which is used for halting the \TeX{} engine and which takes no parameters. Another example is the primitive \macro{kern}, which \todo{reformulate}consumes a single token and then inserts a blank fill of the length given by the token. For example, when the \TeX{} engine encounters \macro{kern1em}, it inserts a 1em wide blank fill.
 
-Besides primitives, there can also be \textit{macros}, which are control sequences that recursively expand into other control sequences and groups of characters. Macros can be defined using the sequence \macro{def}, which can happen directly in the input file, or in a \textit{format}, which is essentially a collection of definitions in a single file. Knuth himself has defined such a format called \textit{plain \TeX{}} as the default format for \TeX{}.
+Besides primitives, there can also be \textit{macros}, which are control sequences that recursively expand into other control sequences and groups of characters. Macros can be defined using the sequence \macro{def}, which can happen directly in the input file, or in a \textit{format}, \todo{reformulate}which is essentially a collection of definitions in a single file. Knuth himself has defined such a format called \textit{plain \TeX{}} as the default format for \TeX{}.
 
-An example of a macro is \macro{quad}, which is defined in plain \TeX{} as follows:
+An example of a macro is \macro{enspace}, which is defined in plain \TeX{} as follows:
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -264,21 +262,25 @@ An example of a macro is \macro{quad}, which is defined in plain \TeX{} as follo
 
 When the macro is defined (e.g. by loading the format) and \macro{enspace} is encountered by the \TeX{} engine, it is expanded into \macro{kern.5em}. This results in a 0.5em (or 1en, hence the name) wide blank fill as outlined above.
 
-Several formats have been created specifically to provide abstractions above plain \TeX{} that allow greater focus on content rather than formatting itself, since plain \TeX{} can be cumbersome for creating documents. Nowadays, the most popular such system is \LaTeX{}, first released in 1984.
+Several formats have been created specifically to provide abstractions on top of plain \TeX{} that allow greater focus on content rather than formatting itself, since plain \TeX{} can be cumbersome for creating documents. Nowadays, the most popular such system is \LaTeX{}, first released in 1984.
 
-There are multiple compatible implementations of the \TeX{} engine, some of which add new features and implement their own primitives. An example is pdf\TeX{}, which is capable of direct output in the PDF format and also provides primitives for micro-typography. Another example is Lua\TeX{}, which will be of interest in Chapter 3, since it is able to directly execute code written in the Lua language.
+There are multiple mostly-compatible implementations of the \TeX{} engine, some of which add new features and implement their own primitives. An example is pdf\TeX{}, which is capable of direct output in the PDF format and also provides primitives for micro-typography\todo{cite Han}. Another example is Lua\TeX{}, which is able to directly execute code written in the Lua language.
 
 \section{The Markdown package for \TeX{}}
 The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of being easy to read and write. This has eventually caused wide adoption of the language on the Internet. The package provides a way to embed blocks of text written in the Markdown language directly into \TeX{} documents, resulting in another layer of abstraction. During typesetting, these blocks are parsed and eventually expanded into native \TeX{} macros correspoding to the Markdown input. 
 
 Because the Markdown package offers first-class support for plain \TeX{} and already tackles the task of converting high-level Markdown elements into low-level \TeX{} macros, it was suitable for its use in a working prototype of a generic \TeX{} writer for Pandoc. That is, the writer can simply produce macros defined by the Markdown package, which can then be expanded into \TeX{} primitives.
 
-Regarding usage, the main intended way to use the Markdown package is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive and takes a filename as an argument; or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown-formatted text directly embedded into the document source. (Alternatively, the \LaTeX{} layer for the Markdown package provides an environment named \texttt{markdown} with the same purpose.) Since we are mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
+Regarding usage, the main intended way to use the Markdown package is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive of \TeX{} and takes a filename as an argument; or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown-formatted text directly embedded into the document source. (Alternatively, the \LaTeX{} layer for the Markdown package provides an environment named \texttt{markdown} with the same purpose. Furthermore, the Con\TeX{}t layer provides \macro{startmarkdown} and \macro{stopmarkdown}.) Since we are mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
 
 \subsection{Lunamark writer -- a previously explored approach}
 Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which was coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark is capable of fast conversion of Markdown, its only input format, into other commonly used markup formats. Since the Lua\TeX{} engine is able to directly execute Lua code, Lunamark's parser was suitable for its use in the Markdown package.
 
-Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc directly into the Markdown package. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before and my supervisor discovered that Pandoc supports external writers. The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs macros that then get transformed into Markdown's macros. (The details of this are described in Chapter 3). Eventually, it became clear that it is not necessary to directly extend Markdown's codebase with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be slightly reformulated.
+Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc directly into the Markdown package. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before and my supervisor discovered that Pandoc supports external writers.
+
+The API of external writers seems to be more stable and high-level than the AST, which would benefit any future maintenance. (This also comes with a tradeoff -- we lose the ability to typeset pre-prepared AST without having Pandoc installed.)
+
+The Lunamark writer was subsequently rewritten as a Pandoc writer, which outputs macros that then get transformed into Markdown's macros. (The details of this are described in Chapter 3). Eventually, it became clear that it is not necessary to directly extend Markdown's codebase with support for Pandoc, and that the macros introduced in what is now the proof of concept for the Pandoc writer could form a standalone package. At that point, the goal of the thesis had to be reformulated to its current form.
 
 \section{Comparison of Pandoc and Markdown}
 
@@ -315,9 +317,9 @@ Finally, there is a group of elements without any corresponding macros in the Ma
   \begin{tikzpicture}[->, baseline, sibling distance=3.5cm, level distance=2cm]
     \node [align=left] (input)
       {
-        \texttt{begin\{markdown\}} \\
+        \macro{begin\{markdown\}} \\
         \texttt{Hello *Markdown*!} \\
-        \texttt{end\{markdown\}}
+        \macro{end\{markdown\}}
       }
       child { node (hello) {Hello\textvisiblespace} }
       child { node [align=left, xshift=0.5cm] (mdemph)
