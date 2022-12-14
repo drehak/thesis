@@ -524,19 +524,19 @@ Finally, there is a group of elements without any corresponding macros in the Ma
 In this chapter, I will describe how the proof of concept for the generic \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
 
 \section{\TeX{} writer for Pandoc and the macros it outputs}
-As described in Chapter 2, a custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \file{p2md.lua}, which is also its name in the proof of concept.
+A custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \file{p2md.lua}, which is also its name in the proof of concept.
 
-For each AST element type, the writer defines a pure function that outputs the element in the output format. If the element has any child elements, they have already been processed by other functions by the time they are passed as arguments. Therefore, it is not necessary to implement the recursive descent manually.
+For each AST element type, the writer defines a pure function\footnote{Except for \texttt{Math} and \texttt{Quoted} (see notes 3. and 4. in Section 2.4).} that outputs the element in the output format. If the element has any child elements, they have already been processed by other functions by the time they are passed as arguments. Therefore, it is not necessary to implement the recursive descent manually.
 
-Functions in \file{p2md.lua} return macros of the form \pandoc{ElementName}, similarly to the Markdown package with its \renderer{ElementName}. These macros are defined inside the \file{p2md.tex} file. This allows the user to change the appearance of elements by simply redefining the macros on the \TeX{} side.\footnote{The proof of concept actually uses this in \file{p2md.sty} to redefine some macros with equivalent \LaTeX{} constructs.} It also results in a somewhat cleaner implementation, since the style of all elements is defined in a single \TeX{} file. \todo{reformulate?}
+Functions in \file{p2md.lua} return macros of the form \pandoc{ElementName}, similarly to the Markdown package with its \renderer{ElementName}. These macros are defined inside the \file{p2md.tex} file. This allows the user to change the appearance of elements by simply redefining the macros on the \TeX{} side.\footnote{The proof of concept actually does this in \file{p2md.sty} to redefine some macros with equivalent \LaTeX{} constructs.} It also results in a somewhat cleaner implementation, since the style of all elements is defined in a single \TeX{} file. \todo{reformulate?}
 
-Internally, Pandoc splits elements into two groups of inline elements and block elements. As the name suggets, block elements appear as vertically separate blocks in the document (e.g. paragraphs, lists or tables), while inline elements can occur inside a line of text -- which is generally a block element. This distinction does not matter for the user, perhaps not even the author of a custom writer. However, it constrains which elements can appear in others -- for each child element, it is specified whether it's a block element or an inline element. Generally, block elements can contain block elements or inline elements, while inline elements can only contain other inline elements.\footnote{The one exception to this is \texttt{Note}, which represents a footnote or an endnote and its contents are represented as a list of block elements. However, these elements appear outside the parent element of the note, such as the contents of this footnote.}
+Internally, Pandoc splits elements into two groups of inline elements and block elements. As the name suggets, block elements appear as vertically separate blocks in the document (e.g. paragraphs, lists, or tables), while inline elements can occur inside a line of text -- which is generally a block element. This distinction does not matter for the user, perhaps not even the author of a custom writer. However, it constrains which elements can appear in others -- for each child element, it is specified whether it's a block element or an inline element. Generally, block elements can contain block elements or inline elements, while inline elements can only contain other inline elements.\footnote{The one exception to this is \texttt{Note}, which represents a footnote or an endnote and its contents are represented as a list of block elements. However, these elements appear outside the parent element of the note, such as the contents of this footnote.}
 
 I have reordered the functions in \file{p2md.lua} so that they appear in the same order in which they are defined in Pandoc\footnote{\url{https://hackage.haskell.org/package/pandoc-types-1.22/docs/Text-Pandoc-Definition.html}}. Nevertheless, since inline elements are structurally simpler and cannot contain block elements, I will describe them first.
 
 \subsection{Inline elements}
 
-The first inline element is \texttt{Str}, which simply defines a string without spaces. A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}. To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters, for example \renderer{Backslash}, the occurences of these characters will be replaced with their respective macros. (It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \pandoc{Backslash\{\}}. This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings -- for HTML, of course:
+The first inline element is \texttt{Str}, which simply defines a string without spaces. A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}. To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters (e.g. \renderer{Backslash}), the occurences of these characters will be replaced with their respective macros.\footnote{It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \pandoc{Backslash\{\}}.} This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings -- for HTML, of course:
 
 $ $
 
@@ -566,7 +566,7 @@ end
 $ $
 
 \noindent
-There is a problem with this construct -- \texttt{gsub} replaces all occurences of the given characters in \texttt{s}. However, if the modified function for \TeX{} output would in this way replace \texttt{\{} with \pandoc{LeftBrace\{\}}, this would generate another occurence of \texttt{\{}, which would also get replaced with \pandoc{LeftBrace\{\}}\dots{} and so on. This can be mitigated by saving the substitution into a variable and returning it at the end of the inner function. (Some characters in the pattern given to \texttt{gsub} have to be escaped with \%.)
+There is a problem with this construct -- \texttt{gsub} replaces all occurences of the given characters in \texttt{s}. However, \todo{factually wrong -- restate}if the modified function for \TeX{} output would in this way replace \texttt{\{} with \pandoc{LeftBrace\{\}}, this would generate another occurence of \texttt{\{}, which would also get replaced with \pandoc{LeftBrace\{\}}\dots{} and so on. This can be mitigated by saving the substitution into a variable and returning it at the end of the inner function. (Some characters in the pattern given to \texttt{gsub} have to be escaped with \%.)
 
 $ $
 
@@ -656,7 +656,7 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
@@ -688,7 +688,7 @@ $ $
 $ $
 
 \noindent
-With \texttt{Cite}, things start to get a bit complicated.\todo{describe the Pandoc side} On the side of the Markdown package, the macro \renderer{Cite} takes a variable number of tokens: the first one is the number of citations, followed by a sequence of four tokens -- a flag that indicates whether to suppress displaying the author, then the prefix, suffix and ID of the citation -- for each of those citations. To assemble this in Lua, we construct a simple buffer table\footnote{A table is the basic structure in Lua, which functions as a hash map indexed using numbers. However, Lua provides functions on tables that can make them function more like lists/arrays, such as \texttt{table.insert}, which is analogous to Python's \texttt{append} on lists and inserts a value into the table, with the key being the greatest key in the table increased by 1.}, which we fill using data obtained from the parameters of \texttt{Cite}. Then we return a concatenation of this table:
+With \texttt{Cite}, things start to get a bit complicated.\todo{describe the Pandoc side} On the side of the Markdown package, the macro \renderer{Cite} takes a variable number of tokens: the first one is the number of citations, followed by a sequence of four parameters -- a flag that indicates whether to suppress displaying the author, then the prefix, suffix and ID of the citation -- for each of those citations. To assemble this in Lua, we construct a simple buffer table\footnote{A table is the basic structure in Lua, which functions as a hash map indexed using numbers. However, Lua provides functions on tables that can make them function more like lists/arrays, such as \texttt{table.insert}, which is analogous to Python's \texttt{append} on lists and inserts a value into the table, with the key being the greatest key in the table increased by 1.}, which we fill using data obtained from the parameters of \texttt{Cite}. Then we return a concatenation of this table:
 
 $ $
 
@@ -714,7 +714,7 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
@@ -727,7 +727,7 @@ $ $
 $ $
 
 \noindent
-Some of the functions provide a table with attributes in the parameters. This table can get populated by e.g. Pandoc's HTML reader. In the cases of some elements, such as \texttt{Div} or \texttt{CodeBlock} (described in section 3.1.2), one of the attributes usually encodes information necessary for describing the element. As for attributes with arbitrary keys and values, the Markdown package currently has no way to interpret or process them, so the \TeX{} writer can discard them for now. Such is the case for \texttt{Code}:
+Some of the functions provide a table with attributes in the parameters. This table can get populated by e.g. Pandoc's HTML reader. In the cases of some elements, such as \texttt{Div} or \texttt{CodeBlock} (described in Section 3.1.2), one of the attributes usually encodes information necessary for describing the element. As for attributes with arbitrary keys and values, the Markdown package currently has no way to interpret or process them\footnote{As of version 2.11.0.}, so the \TeX{} writer can discard them for now. Such is the case for \texttt{Code}:
 
 $ $
 
@@ -742,7 +742,7 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
@@ -757,7 +757,7 @@ $ $
 \noindent
 Regarding whitespace, the authors of Pandoc have for some reason decided to turn spaces into their own element type. Pandoc also distinguishes between line breaks and so-called ``soft breaks'', which in some formats \textit{suggest} a line break without strictly enforcing it.\todo{check if this is correct} Since neither \TeX{} nor the Markdown package offer a mechanism for this\todo{check too}, it is rather safe to assume a simple space in the place of a soft break too.
 
-Note that there is a new line after \pandoc{LineBreak}. A single newline in itself will not get rendered by \TeX{}. The reason for including it is different -- \TeX{} has a hard memory limit\todo{check limit size} and loading a line which is too long could exhaust this limit. This is why the output document is at some places broken into multiple lines, a pattern which will be utilized again with some block elements.
+Note that there is a new line after \pandoc{LineBreak}. A single newline in itself will not get rendered by \TeX{}\todo{the space problem}. The reason for including it is different -- \TeX{} has a hard memory limit\todo{check limit size} and loading a line which is too long could exhaust this limit. This is why the output document is at some places broken into multiple lines, a pattern which will be utilized again with some block elements.
 
 $ $
 
@@ -780,7 +780,7 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
@@ -795,7 +795,7 @@ $ $
 $ $
 
 \noindent
-As mentioned in section 2.4, the custom writer API splits the element \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}, the latter of which is technically a block element. In \TeX{}, the former is represented by wrapping the math contents in two dollar characters, while the latter is delimited by \texttt{\textbackslash{}[} and \texttt{\textbackslash{}]}.
+As mentioned in Section 2.4, the custom writer API splits the element \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}, the latter of which is technically a block element. In \TeX{}, the former is represented by wrapping the math contents in two dollar characters, while the latter is delimited by \texttt{\textbackslash{}[} and \texttt{\textbackslash{}]}.
 
 Luckily, Pandoc's AST represents all math using \TeX{} syntax for math, so there is no need for additional conversion of math syntax in the \TeX{} writer.
 
@@ -816,7 +816,7 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
@@ -847,7 +847,7 @@ $ $
 \noindent
 In the case of our \TeX{} writer, it is sensible to directly typeset raw elements of the \texttt{tex} format. Raw elements of other formats will simply be discarded, as seems to be the custom in other Pandoc writers.
 
-Here, as programming of \TeX{} macros is not my forte, expl3 syntax makes an appearance in \file{p2md.tex}. expl3 redefines how some characters are processed. For example, underscores and colons are valid characters inside identifiers of expl3 functions. The significance of whitespace is also reduced. Because of this, all expl3 code has to be surrounded by \macro{ExplSyntaxOn} and \macro{ExplSyntaxOff}.
+Here, expl3 syntax makes an appearance in \file{p2md.tex}. \todo{explain this in 2.2}expl3 redefines how some characters are processed. For example, underscores and colons are valid characters inside identifiers of expl3 functions. The significance of whitespace is also reduced. Because of this, all expl3 code has to be surrounded by \macro{ExplSyntaxOn} and \macro{ExplSyntaxOff}.
 
 As for \macro{tl\_if\_eq:nnT}, it is a variant of the macro \macro{tl\_if\_eq:nnTF}, which takes four parameters and returns the third, if the first two are equal; or the fourth, if they are not. \macro{tl\_if\_eq:nnT} is a variant that completely omits the ``false'' branch and outputs nothing if the elements are not equal, so it only takes three parameters. I have used the indentation style recommended by the expl3 manual\todo{cite}, so snippets using expl3 syntax will be broken into multiple lines.
 
@@ -878,11 +878,13 @@ $ $
 \lstset{language=[5.3]Lua}
 \begin{lstlisting}
 function Link(s, tgt, tit, attr)
-  return "\\pandocLink{" .. s .. "}{" .. escape(tgt) .. "}{" .. tgt .. "}{" .. escape(tit) .. "}"
+  return "\\pandocLink{" .. s .. "}{" .. escape(tgt) ..
+    "}{" .. tgt .. "}{" .. escape(tit) .. "}"
 end
 
 function Image(s, src, tit, attr)
-  return "\\pandocImage{" .. s .. "}{" .. escape(src) .. "}{" .. src .. "}{" .. escape(tit) .. "}"
+  return "\\pandocImage{" .. s .. "}{" .. escape(src) ..
+    "}{" .. src .. "}{" .. escape(tit) .. "}"
 end
 
 function CaptionedImage(src, tit, s, attr)
@@ -893,7 +895,10 @@ end
 $ $
 
 \noindent
-At the moment, the macros for these elements simply pass their parameters to the corresponding macros of the Markdown package, albeit in greater numbers than before:
+At the moment, the macros for these elements simply pass their parameters to the corresponding macros of the Markdown package, albeit in greater numbers than before:\footnote{
+\texttt{\macro{def}\macro{pandocLink}\{\macro{markdownRendererLink}\}}
+would achieve the same. The displayed form is explicit about the macros taking four parameters.
+}
 
 $ $
 
@@ -927,7 +932,7 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
@@ -957,7 +962,7 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
@@ -989,7 +994,7 @@ end
 $ $
 
 \noindent
-Next is \texttt{Lineblock}, a block of lines without indentation (unlike a chain of paragraphs). Since there is no support for blocks of lines in the Markdown package and we would like to maintain the separation between using \pandoc{...} macros in \file{p2md.lua} and more primitive macros in \file{p2md.tex}, the best solution for now is to intersperse the lines with ``hard'' line breaks, which add no indentation.
+Next is \texttt{Lineblock}\todo{find clearer wording}. Since there is no support for blocks of lines in the Markdown package and we would like to maintain the separation between using \pandoc{...} macros in \file{p2md.lua} and more primitive macros in \file{p2md.tex}, the best solution for now is to intersperse the lines with ``hard'' line breaks, which add no indentation.
 
 $ $
 
@@ -1006,7 +1011,7 @@ $ $
 \noindent
 There is also \texttt{CodeBlock}, a block version of \texttt{Code}. The crucial difference between these two elements is in the macros that the Markdown package provides -- while \renderer{CodeSpan} simply takes a string of code, which it directly typesets, \renderer{Verbatim} takes the name of a file that containins the block of code. (Additionally, \renderer{FencedCode} takes one more parameter that describes the language of that block of code.) However, in Pandoc's AST, the contents of blocks of code are represented directly inside the \texttt{CodeBlock} elements.
 
-To bridge this gap, the function \texttt{Codeblock} in the writer creates a file inside a helper\file{helper?} directory (see section 3.3) and writes the contents of the codeblock into it. A global variable that counts these blocks is incremented every time this function runs, resulting in unique filenames:
+To bridge this gap, the function \texttt{Codeblock} in the writer creates a file inside a helper\file{helper?} directory (see Section 3.3) and writes the contents of the code block into it. A global variable that counts these blocks is incremented every time this function runs, resulting in unique filenames:
 
 $ $
 
@@ -1030,7 +1035,7 @@ $ $
 
 \noindent
 In \file{p2md.tex}, another expl3 macro is used, which determines if the provided language string (obtained from attribute \texttt{class}, this being the one case where we actually do not discard attributes) is empty or not. If not, \renderer{FencedCode} is used instead of \renderer{Verbatim}.
-The same block of expl3 syntax also contains a definition of \pandoc{RawBlock} used in the \texttt{RawBlock} function, which is virtually identical to \texttt{RawInline} (see section 3.1.1).
+The same block in expl3 syntax also contains a definition of \pandoc{RawBlock} used in the \texttt{RawBlock} function, which is virtually identical to \texttt{RawInline} (see Section 3.1.1).
 
 $ $
 
@@ -1058,30 +1063,40 @@ $ $
 $ $
 
 \noindent
-An interesting pattern appears in \texttt{Blockquote}, as well as several other block elements. Instead of a single macro, the Markdown package implements two macros, \renderer{BlockQuoteBegin} and \renderer{BlockQuoteEnd}, which are used before and after the contents of the block quote. This was done mainly to avoid memory overflows during macro expansion. The \TeX{} writer copies this pattern and implements its own pair of block quote macros.
+An interesting pattern appears in \texttt{Blockquote}, as well as several other block elements. Instead of a single macro, the Markdown package implements two macros, \renderer{BlockQuoteBegin} and \renderer{BlockQuoteEnd}, which are used before and after the contents of the block quote.\todo{mention \macro{verb}?} The \TeX{} writer copies this pattern and implements its own pair of block quote macros.
 
 $ $
 
 \noindent
+\todo{pointfree}
 \lstset{language=[5.3]Lua}
 \begin{lstlisting}
 function BlockQuote(s)
-  return "\\pandocBlockQuoteBegin\n" .. s .. "\n\\pandocBlockQuoteEnd"
+  return "\\pandocBlockQuoteBegin\n" .. s ..
+    "\n\\pandocBlockQuoteEnd"
 end
 \end{lstlisting}
 
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:\footnote{Some of the lines in these examples are too long and \TeX{} tends to break them up in a way that could be deceiving, so I broke them up manually and added a few \% symbols to ensure the displayed code is correct. If
+\texttt{\macro{def}\macro{pandocBlockQuoteBegin}\{\macro{}}
+was one line in a \TeX{} document and
+\texttt{markdownRendererBlockQuoteBegin\}\%}
+was another, the macro
+\macro{markdownRendererBlockQuoteBegin}
+would not get parsed.}
 
 $ $
 
 \noindent
 \lstset{language=[plain]TeX}
 \begin{lstlisting}
-\def\pandocBlockQuoteBegin{\markdownRendererBlockQuoteBegin}%
-\def\pandocBlockQuoteEnd{\markdownRendererBlockQuoteEnd}%
+\def\pandocBlockQuoteBegin{%
+    \markdownRendererBlockQuoteBegin}%
+\def\pandocBlockQuoteEnd{%
+    \markdownRendererBlockQuoteEnd}%
 \end{lstlisting}
 
 $ $
@@ -1118,7 +1133,7 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
@@ -1149,10 +1164,12 @@ function DefinitionList(items)
   local buffer = {}
   for _,item in pairs(items) do
     local term, defs = next(item)
-    table.insert(buffer, "\\pandocDefinitionListItemBegin{" .. term .. "}")
+    table.insert(buffer,
+      "\\pandocDefinitionListItemBegin{" .. term .. "}")
     for _,def in pairs(defs) do
-        table.insert(buffer, "\\pandocDefinitionListDefinitionBegin\n" .. def ..
-                       "\n\\pandocDefinitionListDefinitionEnd{}")
+      table.insert(buffer,
+        "\\pandocDefinitionListDefinitionBegin\n" .. def ..
+          "\n\\pandocDefinitionListDefinitionEnd{}")
     end
     table.insert(buffer, "\\pandocDefinitionListItemEnd{}")
   end
@@ -1163,7 +1180,7 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
@@ -1171,10 +1188,14 @@ $ $
 \lstset{language=[plain]TeX}
 \begin{lstlisting}
 \def\pandocDefinitionListBegin{\markdownRendererDlBegin}%
-\def\pandocDefinitionListItemBegin#1{\markdownRendererDlItem{#1}}%
-\def\pandocDefinitionListDefinitionBegin{\markdownRendererDlDefinitionBegin}%
-\def\pandocDefinitionListDefinitionEnd{\markdownRendererDlDefinitionEnd}%
-\def\pandocDefinitionListItemEnd{\markdownRendererDlItemEnd}%
+\def\pandocDefinitionListItemBegin#1{%
+    \markdownRendererDlItem{#1}}%
+\def\pandocDefinitionListDefinitionBegin{%
+    \markdownRendererDlDefinitionBegin}%
+\def\pandocDefinitionListDefinitionEnd{%
+    \markdownRendererDlDefinitionEnd}%
+\def\pandocDefinitionListItemEnd{%
+    \markdownRendererDlItemEnd}%
 \def\pandocDefinitionListEnd{\markdownRendererDlEnd}%
 \end{lstlisting}
 
@@ -1242,14 +1263,13 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
 \noindent
 \lstset{language=[plain]TeX}
 \begin{lstlisting}
-\ExplSyntaxOn
 \def\pandocHorizontalRule{\markdownRendererHorizontalRule}%
 \def\pandocDivBegin{}%
 \def\pandocDivEnd{}%
@@ -1268,10 +1288,14 @@ $ $
 function Table(caption, aligns, widths, headers, rows)
   local coldef = ""
   for col,def in pairs(aligns) do
-    if     def == "AlignLeft"    then coldef = coldef .. "l"
-    elseif def == "AlignRight"   then coldef = coldef .. "r"
-    elseif def == "AlignDefault" then coldef = coldef .. "c"
-    elseif def == "AlignCenter"  then coldef = coldef .. "d"
+    if     def == "AlignLeft"
+      then coldef = coldef .. "l"
+    elseif def == "AlignRight"
+      then coldef = coldef .. "r"
+    elseif def == "AlignDefault"
+      then coldef = coldef .. "c"
+    elseif def == "AlignCenter"
+      then coldef = coldef .. "d"
     end
   end
 
@@ -1302,7 +1326,6 @@ $ $
 \noindent
 \lstset{language=[plain]TeX}
 \begin{lstlisting}
-\ExplSyntaxOn
 \def\pandocTable{\markdownRendererTable}%
 \end{lstlisting}
 
@@ -1328,7 +1351,7 @@ end
 $ $
 
 \noindent
-\file{p2md.tex}:
+Inside \file{p2md.tex}:
 
 $ $
 
@@ -1342,7 +1365,7 @@ $ $
 $ $
 
 \noindent
-Finally, there are ways to provide various key-value metadata to Pandoc at runtime -- for example via the \texttt{-{}-metadata=KEY[:VAL]} option (\texttt{-M KEY[=VAL]} for short). Pandoc then exposes these metadata to writers, in the case of custom writers via the \texttt{PANDOC\_DOCUMENT.meta} table. This is where \texttt{CodeBlock} gets the name of the directory in which it can create files (see section 3.1.2).
+Finally, there are ways to provide various key-value metadata to Pandoc at runtime -- for example via the \texttt{-{}-metadata=KEY[:VAL]} option (\texttt{-M KEY[=VAL]} for short). Pandoc then exposes these metadata to writers, in the case of custom writers via the \texttt{PANDOC\_DOCUMENT.meta} table. This is where \texttt{CodeBlock} gets the name of the helper directory in which it can create files (see Section 3.1.2).
 
 $ $
 
@@ -1388,7 +1411,7 @@ There are currently two styles of defining custom writers for Pandoc, to which t
 
 For the generic \TeX{} writer, I have decided to go with the classic style. There were multiple reasons for this, the main one being that the classic style is what Pandoc's documentation covers. Another reason is that support for the new style was only introduced in Pandoc 2.18\footnote{The Pandoc documentation actually states that the new style of custom writers was introduced in 2.17.2. This is wrong. No such version was even released, 2.17.1.1 was immediately followed by 2.18.}, which was released in January 2022. Repositories of several high-profile Linux distributions ship versions of Pandoc that are way older than that. For instance, Fedora 37 released in November 2022 provides only packages with Pandoc 2.14.0.3\footnote{\url{https://packages.fedoraproject.org/pkgs/pandoc/pandoc/fedora-37.html}}, which was released in June 2021. Another example is Ubuntu 22.04 LTS (codenamed ``Jammy Jellyfish''), which, despite being released in April 2022, still ships Pandoc 2.9.2.1\footnote{\url{https://packages.ubuntu.com/jammy/pandoc}} from March 2020.
 
-Unbeknownst to me at the time, classic custom writers were going to be deprecated. According to the discussion on the related pull request\footnote{\url{https://github.com/jgm/pandoc/pull/8343}}, it will still be possible to update a classic writer to a new-style one. However, other breaking changes might still be introduced. As long as the generic \TeX{} writer is an external one instead of being built into Pandoc itself, it will have to deal with this in the future.
+Unbeknownst to me at the time of writing the proof of concept, classic custom writers were going to be deprecated. According to the discussion on the related pull request,\footnote{\url{https://github.com/jgm/pandoc/pull/8343}} it will still be possible to update a classic writer to a new-style one. However, other breaking changes might still be introduced. As long as the generic \TeX{} writer is an external one instead of being built into Pandoc itself, it will have to deal with this in the future.
 
 \printbibliography[heading=bibintoc] %% Print the bibliography.
 
