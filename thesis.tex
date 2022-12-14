@@ -91,6 +91,8 @@
   commentstyle    = \itshape\color{magenta},
   breaklines      = true,
   columns         = fullflexible,
+  aboveskip       = 2em,
+  belowskip       = 2em,
 }
 \usepackage{floatrow} %% Putting captions above tables
 \floatsetup[table]{capposition=top}
@@ -162,20 +164,14 @@ The AST itself is exposed via a special format named \texttt{native}, which inpu
 
 The simplest way to use Pandoc is through the provided command-line utility. When no arguments are provided, Pandoc takes text formatted with the Markdown markup language from standard input and outputs the HTML equivalent on the standard output:
 
-$ $
-
 \noindent
 \begin{lstlisting}
 $ echo 'Hello *world*!' | pandoc
 <p>Hello <em>world</em>!</p>
 \end{lstlisting}
 
-$ $
-
 \noindent
 Other builtin formats for input and output can be specificied using options \texttt{-{}-from} and \texttt{-{}-to} (\texttt{-f} and \texttt{-t} for short). Naturally, one can also specify names of the input (argument without an option) and output (\texttt{-{}-output} or \texttt{-o}) files. For example, suppose we have an input file named \texttt{shopping-list.html} with the following contents:
-
-$ $
 
 \noindent
 \lstset{language=HTML}
@@ -189,12 +185,8 @@ $ $
 </ul>
 \end{lstlisting}
 
-$ $
-
 \noindent
 Then the following command will produce an output file named \texttt{shopping-list.1} formatted using macros of the \textit{roff} typesetting system used for Unix manual pages:
-
-$ $
 
 \noindent
 \lstset{language=}
@@ -203,12 +195,8 @@ pandoc -f html -t man shopping-list.html \
   -o shopping-list.1
 \end{lstlisting}
 
-$ $
-
 \noindent
 The contents of \texttt{shopping-list.1} will be:
-
-$ $
 
 \noindent
 \begin{lstlisting}
@@ -222,21 +210,15 @@ Butter
 \end{lstlisting}
 % \] % vim: stop highlighting an equation
 
-$ $
-
 \noindent
 If we want to define our own input/output format, we ultimately have two options. The first one is to directly extend the code of Pandoc itself with a new reader/writer module. This would require at least working knowledge of Pandoc's codebase, as well as the Haskell language. Moreover, such a solution would not be very portable, as in order to actually use such a module, it would be necessary to recompile Pandoc. Of course, there is the possibility that Pandoc maintainers would consider the module worthy enough and of a sufficient quality (and the format significant enough) to include it into Pandoc itself. Even then, the format would only be available in new versions of Pandoc.
 
 The other option is to write a reader/writer in the Lua programming language using the supported Lua API, which is described in Pandoc's documentation\footnote{\url{https://pandoc.org/custom-writers.html}}. Then, by simply using the path to the Lua reader/writer as an input/output format, Pandoc's built-in Lua interpreter will parse and use that reader/writer at runtime. For example, if we defined a plain \TeX{} writer in the file \texttt{plaintex.lua} and then wanted to use plain \TeX{} as the output format, it would be enough to call:
 
-$ $
-
 \noindent
 \begin{lstlisting}
 $ echo 'Hello *world*!' | pandoc -t plaintex.lua
 \end{lstlisting}
-
-$ $
 
 \noindent
 We will construct such a writer in Chapter 3.
@@ -538,8 +520,6 @@ I have reordered the functions in \file{p2md.lua} so that they appear in the sam
 
 The first inline element is \texttt{Str}, which simply defines a string without spaces. A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}. To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters (e.g. \renderer{Backslash}), the occurences of these characters will be replaced with their respective macros.\footnote{It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \pandoc{Backslash\{\}}.} This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings -- for HTML, of course:
 
-$ $
-
 \noindent
 \lstset{language=[5.3]Lua}
 \begin{lstlisting}
@@ -563,12 +543,8 @@ local function escape(s, in_attribute)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 There is a problem with this construct -- \texttt{gsub} replaces all occurences of the given characters in \texttt{s}. However, \todo{factually wrong -- restate}if the modified function for \TeX{} output would in this way replace \texttt{\{} with \pandoc{LeftBrace\{\}}, this would generate another occurence of \texttt{\{}, which would also get replaced with \pandoc{LeftBrace\{\}}\dots{} and so on. This can be mitigated by saving the substitution into a variable and returning it at the end of the inner function. (Some characters in the pattern given to \texttt{gsub} have to be escaped with \%.)
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -595,12 +571,8 @@ local function escape(s)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 The function for \texttt{Str} itself is same as in the sample writer.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -610,12 +582,8 @@ function Str(s)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Next inline element is \texttt{Emph}, representing emphasis. \texttt{Emph} contains a list of inline elements, but any special characters inside them have already been escaped by \texttt{Str} executed on the strings inside, so there is no need to do that again. Here, the Lua operator \texttt{..} performs concatenation.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -625,12 +593,8 @@ function Emph(s)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 \pandoc{Emph} is defined in \file{p2md.tex}, as outlined above:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -638,12 +602,8 @@ $ $
 \def\pandocEmph{\markdownRendererEmphasis}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 Next is \texttt{Underline}. The original Markdown language has no way to represent an underline, so there is no support for it in the Markdown package.\footnote{As of version 2.11.0.} For now, we will simply define a macro which expands to its parameter, rendering it as a plain string.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -653,12 +613,8 @@ function Underline(s)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -666,12 +622,8 @@ $ $
 \def\pandocUnderline#1{#1}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 For the next few inline elements, the structure of the writer functions is virtually the same, so it is not worth listing them here. The macros look similar too. The only new construct occurs in \pandoc{SingleQuoted} and \pandoc{DoubleQuoted}, which surround their parameter with \texttt{`} and \texttt{'}, the characters used by \TeX{} to represent quotes:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -685,12 +637,8 @@ $ $
 \def\pandocDoubleQuoted#1{``#1''}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 With \texttt{Cite}, things start to get a bit complicated.\todo{describe the Pandoc side} On the side of the Markdown package, the macro \renderer{Cite} takes a variable number of tokens: the first one is the number of citations, followed by a sequence of four parameters -- a flag that indicates whether to suppress displaying the author, then the prefix, suffix and ID of the citation -- for each of those citations. To assemble this in Lua, we construct a simple buffer table\footnote{A table is the basic structure in Lua, which functions as a hash map indexed using numbers. However, Lua provides functions on tables that can make them function more like lists/arrays, such as \texttt{table.insert}, which is analogous to Python's \texttt{append} on lists and inserts a value into the table, with the key being the greatest key in the table increased by 1.}, which we fill using data obtained from the parameters of \texttt{Cite}. Then we return a concatenation of this table:
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -711,12 +659,8 @@ function Cite(s, cs)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -724,12 +668,8 @@ $ $
 \def\pandocCite{\markdownRendererCite}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 Some of the functions provide a table with attributes in the parameters. This table can get populated by e.g. Pandoc's HTML reader. In the cases of some elements, such as \texttt{Div} or \texttt{CodeBlock} (described in Section 3.1.2), one of the attributes usually encodes information necessary for describing the element. As for attributes with arbitrary keys and values, the Markdown package currently has no way to interpret or process them\footnote{As of version 2.11.0.}, so the \TeX{} writer can discard them for now. Such is the case for \texttt{Code}:
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -739,12 +679,8 @@ function Code(s, attr)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -752,14 +688,10 @@ $ $
 \def\pandocCode{\markdownRendererCodeSpan}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 Regarding whitespace, the authors of Pandoc have for some reason decided to turn spaces into their own element type. Pandoc also distinguishes between line breaks and so-called ``soft breaks'', which in some formats \textit{suggest} a line break without strictly enforcing it.\todo{check if this is correct} Since neither \TeX{} nor the Markdown package offer a mechanism for this\todo{check too}, it is rather safe to assume a simple space in the place of a soft break too.
 
 Note that there is a new line after \pandoc{LineBreak}. A single newline in itself will not get rendered by \TeX{}\todo{the space problem}. The reason for including it is different -- \TeX{} has a hard memory limit\todo{check limit size} and loading a line which is too long could exhaust this limit. This is why the output document is at some places broken into multiple lines, a pattern which will be utilized again with some block elements.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -777,12 +709,8 @@ function LineBreak()
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -792,14 +720,10 @@ $ $
 \def\pandocLineBreak{\markdownRendererLineBreak}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 As mentioned in Section 2.4, the custom writer API splits the element \texttt{Math} into two functions, \texttt{InlineMath} and \texttt{DisplayMath}, the latter of which is technically a block element. In \TeX{}, the former is represented by wrapping the math contents in two dollar characters, while the latter is delimited by \texttt{\textbackslash{}[} and \texttt{\textbackslash{}]}.
 
 Luckily, Pandoc's AST represents all math using \TeX{} syntax for math, so there is no need for additional conversion of math syntax in the \TeX{} writer.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -813,12 +737,8 @@ function DisplayMath(s)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -827,12 +747,8 @@ $ $
 \def\pandocDisplayMath#1{\[#1\]}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 Some input formats of Pandoc allow raw elements of other format types to be inlined in the output documents. Examples of this are raw HTML inside documents formatted with Markdown, or raw \TeX{} inside HTML documents or Jupyter notebooks. If an output format supports the format of the raw elements, it might be able to directly use its contents.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -842,16 +758,12 @@ function RawInline(format, str)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 In the case of our \TeX{} writer, it is sensible to directly typeset raw elements of the \texttt{tex} format. Raw elements of other formats will simply be discarded, as seems to be the custom in other Pandoc writers.
 
 Here, expl3 syntax makes an appearance in \file{p2md.tex}. \todo{explain this in 2.2}expl3 redefines how some characters are processed. For example, underscores and colons are valid characters inside identifiers of expl3 functions. The significance of whitespace is also reduced. Because of this, all expl3 code has to be surrounded by \macro{ExplSyntaxOn} and \macro{ExplSyntaxOff}.
 
 As for \macro{tl\_if\_eq:nnT}, it is a variant of the macro \macro{tl\_if\_eq:nnTF}, which takes four parameters and returns the third, if the first two are equal; or the fourth, if they are not. \macro{tl\_if\_eq:nnT} is a variant that completely omits the ``false'' branch and outputs nothing if the elements are not equal, so it only takes three parameters. I have used the indentation style recommended by the expl3 manual\todo{cite}, so snippets using expl3 syntax will be broken into multiple lines.
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -867,12 +779,8 @@ $ $
 \ExplSyntaxOff
 \end{lstlisting}
 
-$ $
-
 \noindent
 \texttt{Link}, \texttt{Image}, \texttt{CaptionedImage}.\todo{write more}
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -892,15 +800,11 @@ function CaptionedImage(src, tit, s, attr)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 At the moment, the macros for these elements simply pass their parameters to the corresponding macros of the Markdown package, albeit in greater numbers than before:\footnote{
 \texttt{\macro{def}\macro{pandocLink}\{\macro{markdownRendererLink}\}}
 would achieve the same. The displayed form is explicit about the macros taking four parameters.
 }
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -910,12 +814,8 @@ $ $
 \def\pandocCaptionedImage#1#2#3#4{\markdownRendererImage{#1}{#2}{#3}{#4}}
 \end{lstlisting}
 
-$ $
-
 \noindent
 The last two inline elements are \texttt{Note} and \texttt{Span}, representing footnotes and HTML span of texts respectively. Neither of them is represented by the Markdown package for now. Again, the attributes of \texttt{Span} are discarded for now, which is unfortunate, since attributes are the main reason of using \texttt{<span>} in HTML in the first place.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -929,12 +829,8 @@ function Span(s, attr)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -943,13 +839,9 @@ $ $
 \def\pandocSpan#1{#1}%
 \end{lstlisting}
 
-$ $
-
 \subsection{Block elements}
 
 Block elements differ from inline elements mainly in the spacing between them. In a custom writer, it is sufficient to define this spacing just once through the \texttt{Blocksep} function:
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -959,12 +851,8 @@ function Blocksep()
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -972,12 +860,8 @@ $ $
 \def\pandocBlocksep{\markdownRendererInterblockSeparator}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 The first two block elements, \texttt{Plain} and \texttt{Para}, simply describe blocks of plain text. The main difference (between the two, as well as between them and \texttt{Str}) is in which elements they are allowed to exist as children\todo{check}, but their appearance is virtually the same.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -991,12 +875,8 @@ function Para(s)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Next is \texttt{Lineblock}\todo{find clearer wording}. Since there is no support for blocks of lines in the Markdown package and we would like to maintain the separation between using \pandoc{...} macros in \file{p2md.lua} and more primitive macros in \file{p2md.tex}, the best solution for now is to intersperse the lines with ``hard'' line breaks, which add no indentation.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -1006,14 +886,10 @@ function LineBlock(ls)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 There is also \texttt{CodeBlock}, a block version of \texttt{Code}. The crucial difference between these two elements is in the macros that the Markdown package provides -- while \renderer{CodeSpan} simply takes a string of code, which it directly typesets, \renderer{Verbatim} takes the name of a file that containins the block of code. (Additionally, \renderer{FencedCode} takes one more parameter that describes the language of that block of code.) However, in Pandoc's AST, the contents of blocks of code are represented directly inside the \texttt{CodeBlock} elements.
 
 To bridge this gap, the function \texttt{Codeblock} in the writer creates a file inside a helper\file{helper?} directory (see Section 3.3) and writes the contents of the code block into it. A global variable that counts these blocks is incremented every time this function runs, resulting in unique filenames:
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -1031,13 +907,9 @@ function CodeBlock(s, attr)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 In \file{p2md.tex}, another expl3 macro is used, which determines if the provided language string (obtained from attribute \texttt{class}, this being the one case where we actually do not discard attributes) is empty or not. If not, \renderer{FencedCode} is used instead of \renderer{Verbatim}.
 The same block in expl3 syntax also contains a definition of \pandoc{RawBlock} used in the \texttt{RawBlock} function, which is virtually identical to \texttt{RawInline} (see Section 3.1.1).
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -1060,12 +932,8 @@ $ $
 \ExplSyntaxOff
 \end{lstlisting}
 
-$ $
-
 \noindent
 An interesting pattern appears in \texttt{Blockquote}, as well as several other block elements. Instead of a single macro, the Markdown package implements two macros, \renderer{BlockQuoteBegin} and \renderer{BlockQuoteEnd}, which are used before and after the contents of the block quote.\todo{mention \macro{verb}?} The \TeX{} writer copies this pattern and implements its own pair of block quote macros.
-
-$ $
 
 \noindent
 \todo{pointfree}
@@ -1077,8 +945,6 @@ function BlockQuote(s)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:\footnote{Some of the lines in these examples are too long and \TeX{} tends to break them up in a way that could be deceiving, so I broke them up manually and added a few \% symbols to ensure the displayed code is correct. If
 \texttt{\macro{def}\macro{pandocBlockQuoteBegin}\{\macro{}}
@@ -1087,8 +953,6 @@ was one line in a \TeX{} document and
 was another, the macro
 \macro{markdownRendererBlockQuoteBegin}
 would not get parsed.}
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -1099,12 +963,8 @@ $ $
     \markdownRendererBlockQuoteEnd}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 The pattern appears again in macros for ordered and unordered lists, although here the macros are nested in two layers, with pairs of \renderer{(Ol/Ul)\-Begin} and \renderer{(Ol/Ul)\-End} surrounding a sequence of pairs of \renderer{(Ol/Ul)\-Item\-Begin} and \renderer{(Ol/Ul)\-Item\-End}, which contain the individual list items.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -1130,12 +990,8 @@ function BulletList(items, num, sty, delim) -- TODO handle num, sty, delim
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -1150,12 +1006,8 @@ $ $
 \def\pandocBulletListEnd{\markdownRendererUlEnd}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 Definition lists ramp up this complexity once more, this time with a third layer of macros. Inside  each item of the list, which also takes a term as a parameter, one or more definitions for this term can occur -- again, each of them inside a pair of macros.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -1177,12 +1029,8 @@ function DefinitionList(items)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -1199,12 +1047,8 @@ $ $
 \def\pandocDefinitionListEnd{\markdownRendererDlEnd}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 For document headings, the Markdown package has six macros, \renderer{HeadingOne} to \renderer{HeadingSix}. Design-wise, this might make sense as a mapping to \LaTeX{} macros like \macro{chapter}, \macro{section}, \macro{subsection} etc. However, the corresponding Pandoc element simply passes the heading level as an integer.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -1214,12 +1058,8 @@ function Header(lev, s, attr)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}, the expl3 macro \macro{int\_case:nn} simply picks the right one of these macros depending on the level.
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -1241,12 +1081,8 @@ $ $
 \ExplSyntaxOff
 \end{lstlisting}
 
-$ $
-
 \noindent
 \texttt{HorizontalRule} simply represents a horizonal rule, while \texttt{Div} represents a \texttt{<div>} element from HTML. As with \texttt{Span} before, attributes are discarded for now.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -1260,12 +1096,8 @@ function Div(s, attr)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -1275,12 +1107,8 @@ $ $
 \def\pandocDivEnd{}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 Finally, \texttt{Table}. This one do be kinda fucked up tho.\todo{elaborate}
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -1316,12 +1144,8 @@ function Table(caption, aligns, widths, headers, rows)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 And in \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -1329,14 +1153,10 @@ $ $
 \def\pandocTable{\markdownRendererTable}%
 \end{lstlisting}
 
-$ $
-
 \subsection{Other objects}
 There is more to a custom writer than just functions for rendering elements. Here, I will shortly describe those extra objects.
 
 While not an element per se, any custom writer API also has to define a function called \texttt{Doc}. This function is only called once for the whole document and is able to add extra contents before/after the body of the document. (For example, the sample custom writer for HTML uses it to append contents of footnotes at the end.) The Markdown package offers a similar capability via a pair of macros that can be predefined at will, so the \TeX{} writer simply invokes those.
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -1348,12 +1168,8 @@ function Doc(body, metadata, variables)
 end
 \end{lstlisting}
 
-$ $
-
 \noindent
 Inside \file{p2md.tex}:
-
-$ $
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -1362,20 +1178,14 @@ $ $
 \def\pandocDocumentEnd{\markdownRendererDocumentEnd}%
 \end{lstlisting}
 
-$ $
-
 \noindent
 Finally, there are ways to provide various key-value metadata to Pandoc at runtime -- for example via the \texttt{-{}-metadata=KEY[:VAL]} option (\texttt{-M KEY[=VAL]} for short). Pandoc then exposes these metadata to writers, in the case of custom writers via the \texttt{PANDOC\_DOCUMENT.meta} table. This is where \texttt{CodeBlock} gets the name of the helper directory in which it can create files (see Section 3.1.2).
-
-$ $
 
 \noindent
 \lstset{language=[5.3]Lua}
 \begin{lstlisting}
 local meta = PANDOC_DOCUMENT.meta
 \end{lstlisting}
-
-$ $
 
 \section{\LaTeX{} macropackage surrounding the writer}
 \emph{Shortly describe \file{p2md.sty} and the overrides that happen here.}
