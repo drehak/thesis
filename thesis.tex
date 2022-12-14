@@ -1102,7 +1102,8 @@ Inside \file{p2md.tex}:
 \noindent
 \lstset{language=[plain]TeX}
 \begin{lstlisting}
-\def\pandocHorizontalRule{\markdownRendererHorizontalRule}%
+\def\pandocHorizontalRule{%
+    \markdownRendererHorizontalRule}%
 \def\pandocDivBegin{}%
 \def\pandocDivEnd{}%
 \end{lstlisting}
@@ -1188,12 +1189,235 @@ local meta = PANDOC_DOCUMENT.meta
 \end{lstlisting}
 
 \section{\LaTeX{} macropackage surrounding the writer}
-\emph{Shortly describe \file{p2md.sty} and the overrides that happen here.}
-\subsection{Inline elements}
-\subsection{Block elements}
+\emph{Explain the rationale of a \LaTeX{} package.}\todo{Explain!}
 
-\section{Example documents}
-\emph{Demonstrate specific example documents and the problems they posed while implementing the writer. \label{fig:html-browsers-typeset} \todo{Consider if this should not be a separate chapter.}}
+\bigskip
+The file extension for \LaTeX{} packages is \texttt{.sty}, hence the filename \file{p2md.sty}.
+\noindent
+Each \LaTeX{} package must first specify the \TeX{} format it requires (in this case \LaTeX{}2e) ad its name. Optionally, it can also specify its release date and provide a short description.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{pandoc-to-markdown}[2022/10/11 package pandoc-to-markdown]
+\end{lstlisting}
+
+\noindent
+Because the package requires macros from the Markdown package to run correctly, it has to make sure that the Markdown package is loaded. The command \macro{RequirePackage} forces \LaTeX{} to load a package with the specified name, if it has not been loaded before. This way, the source of each package is loaded just once at most.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\RequirePackage{markdown}
+\end{lstlisting}
+
+\noindent
+Next, the package uses the macro \macro{input}, which expands to everything inside \file{p2md.tex}, essentially defining the macros within that file.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\input"pandoc-to-markdown.tex"
+\end{lstlisting}
+
+\noindent
+The \texttt{keyval} package will be needed later to provide a way for the command \macro{pandocInput} to take options.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\RequirePackage{keyval}
+\end{lstlisting}
+
+\subsection{Inline elements}
+Some macros for inline elements defined in \file{p2md.tex} (see Section 3.1.1) that had an equivalent in neither plain \TeX{} nor the Markdown package simply passed their parameters unchanged. \LaTeX{} offers simple commands which are equivalents of these elements, and are therefore used to redefine the macros. In \LaTeX{}, this is done via the command \macro{renewcommand}.
+
+All of the commands below are available in the base \LaTeX{} format except \macro{uline} and \macro{sout}, which are provided by the package \texttt{ulem}.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\RequirePackage[normalem]{ulem}
+\renewcommand\pandocUnderline{\uline}
+\renewcommand\pandocStrikeout{\sout}
+\renewcommand\pandocSubscript{\textsubscript}
+\renewcommand\pandocSuperscript{\textsuperscript}
+\renewcommand\pandocSmallCaps{\textsc}
+\renewcommand\pandocLineBreak{\\}
+\end{lstlisting}
+
+\noindent
+The plain \TeX{} macro \macro{pandocRawInline} was defined to either expand into its contents in the case that they themselves are \TeX{}, or discard its contents otherwise. In \LaTeX{}, it should also be able to typeset \LaTeX{} contents. To support both the \texttt{tex} and \texttt{latex} formats, the expl3 macro \macro{int\_case:nn} is used.
+
+To denote that a command takes more than one parameter, the number of parameters is specified in square brackets right before the definition of the macro - in this case, \texttt{[2]}.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\ExplSyntaxOn
+\renewcommand\pandocRawInline[2]
+  {
+    \str_case:nn
+      { #1 }
+      {
+        { tex }   { #2 }
+        { latex } { #2 }
+      }
+  }
+\ExplSyntaxOff
+\end{lstlisting}
+
+\noindent
+The macro \macro{pandocNote} defined in \file{p2md.tex} also did not do anything besides passing its parameter. Since the \LaTeX{} command \macro{footnote} simply typesets its parameter as a footnote\footnote{Like this.}, it is suitable for the \texttt{Note} element.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\renewcommand\pandocNote{\footnote}
+\end{lstlisting}
+
+\subsection{Block elements}
+Regarding macros for block elements, the only one with a different \LaTeX{} definition is \macro{pandocRawBlock}, which is virtually identical to \macro{pandocRawInline}.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\ExplSyntaxOn
+\renewcommand\pandocRawBlock[2]
+  {
+    \str_case:nn
+      { #1 }
+      {
+        { tex }   { #2 }
+        { latex } { #2 }
+      }
+  }
+\ExplSyntaxOff
+\end{lstlisting}
+
+\subsection{Main command \macro{pandocInput}}
+A way to actually use the prototype in \LaTeX{} documents will be provided by the command \macro{pandocInput}.
+
+First, to allow the users to select an input format for Pandoc other than the default \texttt{markdown}, we will create a macro called \macro{pandocFormat} that holds the name of the input format. By default, \macro{pandocFormat} is set to \texttt{markdown}. It is also associated with the ``key'' format, which will allow users to change the format directly via an optional argument of \macro{pandocInput}. This argument will be provided in the form of a key-value pair \texttt{format=...}, which will get parsed later in the definition of \macro{pandocInput}. Since \LaTeX{} commands can only have one optional parameter, this key-value approach will provide the means to ``pack'' multiple options into one in the case that more options will be added in the future.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\def\pandocFormat{markdown}
+\define@key{pandoc-to-markdown}{format}{%
+  \def\pandocFormat{#1}%
+}
+\end{lstlisting}
+
+\noindent
+We will also define a macro holding the name of a helper directory, which will be filled with contents of code blocks to be typeset (see \texttt{CodeBlock} in Section 3.1.2). The plain \TeX{} primitive \macro{jobname} expands to the name of the top file being processed by \TeX{}. Therefore, if the input file is for example called \texttt{book.tex}, \macro{pandocAuxDir} will expand into \texttt{\_pandoc\_book}:
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\def\pandocAuxDir{_pandoc_\jobname}
+\end{lstlisting}
+
+\noindent
+\emph{Explain \texttt{shellesc} (commit \texttt{890a8a25}).}\todo{Explain!}
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\RequirePackage{shellesc}
+\end{lstlisting}
+
+\noindent
+And, finally, we define the command \macro{pandocInput} itself.
+
+Commands are defined via the command \macro{newcommand}, which has the same structure as aforementioned \macro{renewcommand}. To declare the first parameter as optional, two pairs of square brackets can be used, with the first one containing the total number of parameters and the second one containing the default value for the optional parameter. Thus, the following line will start the definition of a command named \macro{pandocInput}, which takes two parameters, the first one being optional with no default value:
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\newcommand\pandocInput[2][]{%
+\end{lstlisting}
+
+\noindent
+First, the command \macro{setkeys} from the package \texttt{keyval}, which was imported earlier, will scan the first parameter and look for a key-value pair in the form \texttt{format=...}\footnote{Multiple key-value pairs are expected to be separated by a comma, e.g. \texttt{abc=def,~ghi=jkl}.}. If it finds such a pair, it will set the earlier-defined key \texttt{format} to the found value.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+  \setkeys{pandoc-to-markdown}{#1}%
+\end{lstlisting}
+
+\noindent
+This is followed by the command \macro{directlua}, which is provided by the Lua\TeX{} engine and executes a block of Lua code passed through a parameter.
+
+In this case, the block of code imports a Lua library called \texttt{lfs} (short for \emph{LuaFileSystem}), which is then used to check if a directory with the name specified earlier in the \macro{pandocAuxDir} macro exists. If not, it is also used to create this directory (and halt the execution of the engine, if the creation of the directory fails).
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+  \directlua{local kpse = require("kpse")
+             kpse.set_program_name("luatex")
+             local lfs = require("lfs")
+             local auxDir =
+               "\luaescapestring{\pandocAuxDir}"
+             if not lfs.isdir(auxDir) then
+               assert(lfs.mkdir(auxDir))
+             end}
+\end{lstlisting}
+
+\noindent
+In a similar way to \macro{directlua}, the pair of macros \macro{immediate}\macro{write18} is used to run a shell command given by the parameter.\todo{mention shell-escape}
+
+This particular command will run Pandoc with a set of options (see Section 2.1.1) which will make Pandoc read the input file given by the second parameter of \macro{pandocInput}, convert its contents from the format given by \macro{pandocFormat} to the format defined in the file \file{p2md.lua}, and outputs the result into \macro{jobname.pandoc.tex} -- for example, if the input file of \TeX{} is called \texttt{book.tex}, Pandoc puts its output into \texttt{book.pandoc.tex}.
+The option \texttt{-M} also sets the metadata key \texttt{auxDir} to the value of \macro{pandocAuxDir}, which is then passed to the custom writer (see end of Section 3.1.3).
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+  \immediate\write18{pandoc -f \pandocFormat\space-i "#2"
+    -M auxDir="\pandocAuxDir" -t pandoc-to-markdown.lua -o "\jobname.pandoc.tex"}%
+\end{lstlisting}
+
+\noindent
+Finally, \macro{pandocInput} uses \macro{input} again, this time to insert the contents of the file that was just created by Pandoc. Its contents are, of course, macros of the form \macro{pandoc...}, most of which will expand into macros of the Markdown package. This is fine, as we have loaded Markdown earlier.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+  \input"\jobname.pandoc.tex"%
+}
+\end{lstlisting}
+
+\subsection{Usage}
+To use the proof of concept in a \LaTeX{} document, the \LaTeX{} package has to be loaded in the preamble:
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\usepackage{pandoc-to-markdown}
+\end{lstlisting}
+
+\noindent
+Then, inside the document, it is enough to call the \macro{pandocInput} command. If the format of the input file is \texttt{markdown}, just specifying the name of the file is enough.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\pandocInput{example.md}
+\end{lstlisting}
+
+\noindent
+In the case of a different format, the name of the format has to be specified in the first optional parameter. In \LaTeX{}, the value of an optional parameters is provided in square brackets instead of braces.
+
+\noindent
+\lstset{language=[LaTeX]TeX}
+\begin{lstlisting}
+\pandocInput[format=docx]{example.docx}
+\end{lstlisting}
+
+\chapter{Example documents}
+\emph{Demonstrate specific example documents and the problems they posed while implementing the writer.} \label{fig:html-browsers-typeset}
 
 % \includepdf[pages={1}]{pandoc-to-markdown/examples/html-browsers.pdf}
 
