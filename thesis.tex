@@ -1419,6 +1419,16 @@ In the case of a different format, the name of the format has to be specified in
 \chapter{Example documents}
 \emph{Demonstrate specific example documents and the problems they posed while implementing the writer.} \label{fig:html-browsers-typeset}
 
+See Figure~\ref{fig:example-panda}.
+
+\begin{figure}[tbhp]
+\centering
+% https://tex.stackexchange.com/a/57420/70941
+\fbox{\includegraphics[width=\dimexpr(\textwidth-2\fboxrule-2\fboxsep), trim={4cm 18.1cm 4cm 4cm}, clip]{figures/markdown-panda}}
+\caption{An excerpt from the example Markdown document \texttt{panda.md} after it has been typeset using our proof of concept writer.}
+\label{fig:example-panda}
+\end{figure}
+
 % \includepdf[pages={1}]{pandoc-to-markdown/examples/html-browsers.pdf}
 
 % \begin{figure}[h]
