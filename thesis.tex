@@ -55,9 +55,9 @@
     abstract    = {%
       Pandoc is a utility able to convert between dozens of document formats
       including \TeX{} formats such as \LaTeX{} and Con\TeX{}t, but it provides
-      no support for other well-known \TeX{} formats such as plain \TeX{} or
-      Op\TeX{}. Moreover, it offers no way to influence its output. The goal of
-      this thesis is to integrate Pandoc with the \TeX{} package Markdown,
+      no support for other well-known \TeX{} formats such as plain \TeX{}.
+      Moreover, it offers no way to influence the style of its output. The goal
+      of this thesis is to integrate Pandoc with the \TeX{} package Markdown,
       which allows users to embed blocks of text in the lightweight markup
       language Markdown into their documents, as well as change the styling of
       individual elements. Using macros from the Markdown package, the author
@@ -79,12 +79,6 @@
     %% Remove the following line to use the JVS 2018 faculty logo.
     facultyLogo = fithesis-fi,
 }
-% \usepackage{makeidx}      %% The `makeidx` package contains
-% \makeindex                %% helper commands for index typesetting.
-\usepackage[acronym]{glossaries}          %% The `glossaries` package
-\renewcommand*\glspostdescription{\hfill} %% contains helper commands
-\loadglsentries{terms-abbrs.tex}          %% for typesetting glossaries
-\makenoidxglossaries                      %% and lists of abbreviations.
 %% These additional packages are used within the document:
 \usepackage{paralist} %% Compact list environments
 \usepackage{amsmath}  %% Mathematics
@@ -124,8 +118,10 @@
 
 \usepackage{microtype}
 \usepackage{hyphenat}
+\usepackage[T1]{fontenc}
 \hyphenation{light-weight}
 \hyphenation{con-struc-tors}
+\hyphenation{Čes-ko-slo-ven-ské-ho}
 
 \newcommand\macro[1]{\texttt{\textbackslash{}{#1}}}
 \newcommand\pandoc[1]{\macro{pandoc\-{#1}}}
@@ -233,7 +229,7 @@ Butter
 \noindent
 If we want to define our own input/output format, we ultimately have two options. The first one is to directly extend the code of Pandoc itself with a new reader/writer module. This would require at least working knowledge of Pandoc's codebase, as well as the Haskell language. Moreover, such a solution would not be very portable, as in order to actually use such a module, it would be necessary to recompile Pandoc. Of course, there is the possibility that Pandoc maintainers would consider the module worthy enough and of a sufficient quality (and the format significant enough) to include it into Pandoc itself. Even then, the format would only be available in new versions of Pandoc.
 
-The other option is to write a reader/writer in the Lua programming language using the supported Lua API, which is described in Pandoc's documentation\footnote{\url{https://pandoc.org/custom-writers.html}}. Then, by simply using the path to the Lua reader/writer as an input/output format, Pandoc's built-in Lua interpreter will parse and use that reader/writer at runtime. For example, if we defined a plain \TeX{} writer in the file \texttt{plaintex.lua} and then wanted to use plain \TeX{} as the output format, it would be enough to call:
+The other option is to write a reader/writer in the Lua programming language \cite{lua-pil} using the supported Lua API, which is described in Pandoc's documentation. \cite{pandoc-writers} Then, by simply using the path to the Lua reader/writer as an input/output format, Pandoc's built-in Lua interpreter will parse and use that reader/writer at runtime. For example, if we defined a plain \TeX{} writer in the file \texttt{plaintex.lua} and then wanted to use plain \TeX{} as the output format, it would be enough to call:
 
 \noindent
 \begin{lstlisting}
@@ -246,9 +242,9 @@ We will construct such a writer in Chapter 3.
 As an aside, for some output formats (like \LaTeX{}, HTML or roff macros above), the default output produced by Pandoc does not constitute a complete document ready for viewing/typesetting, but rather just a short snippet. This can be amended by the \texttt{-{}-standalone} option (\texttt{-s}~for short), which surrounds the snippet with a template of a full document. (All of the templates are too long to reasonably embed an example of such an output here.)
 
 \section{\TeX{}}
-\TeX{} is a typesetting system designed and implemented by Donald Knuth in 1978. One of the main motivations for the creation of \TeX{} was the difficulty surrounding the typesetting of mathematics at the time of its inception. However, it has since found widespread use in the academic sphere in general.
+\TeX{}~\cite{texbook} is a typesetting system designed and implemented by Donald Knuth in 1978. One of the main motivations for the creation of \TeX{} was the difficulty surrounding the typesetting of mathematics at the time of its inception. However, it has since found widespread use in the academic sphere in general.
 
-The input files of \TeX{} are plain text and their main elements are text and control sequences, which influence how the text is to be typeset. Control sequences typically begin with a backslash and a sequence of letters (uppercase or lowercase). Additionally, some control sequences take one or more of following tokens as parameters. The \TeX{} engine itself has around 300 of built-in control sequences, so-called \textit{primitives}.
+The input files of \TeX{} are plain text and their main elements are text and control sequences, which influence how the text is to be typeset. Control sequences typically begin with a backslash and a sequence of letters (uppercase or lowercase). Additionally, some control sequences take one or more of following tokens as parameters. The \TeX{} engine itself has around 300 of built-in control sequences, so-called \textit{primitives}. \cite{olsak-tbn}
 
 An example of a primitive is \macro{end}, which is used for halting the \TeX{} engine and which takes no parameters. Another example is the primitive \macro{kern}, which consumes a single parameter and then inserts a blank fill of the length given by that parameter. For example, when the \TeX{} engine encounters \macro{kern1em}, it inserts a 1em wide blank fill.
 
@@ -269,7 +265,7 @@ Several formats have been created specifically to provide abstractions on top of
 There are multiple mostly-compatible implementations of the \TeX{} engine, some of which add new features and implement their own primitives. An example is pdf\TeX{}, which is capable of direct output in the PDF format and also provides primitives for micro-typography\cite{thanh01}. Another example is Lua\TeX{}, which is able to directly execute code written in the Lua language.
 
 \subsection{The expl3 programming language}
-Since programming complex macros in \TeX{} using just macro expansion can be rather cumbersome, this proof of concept utilizes the high level programming language \emph{expl3} provided by the macropackage \emph{expl3-generic}. Expl3 has been developed primarily for \LaTeX{}3, an upcoming major version of \LaTeX{}, but it is usable with plain \TeX{} as well. It will be showcased directly in the code of the proof of concept in Section 3.1.
+Since programming complex macros in \TeX{} using just macro expansion can be rather cumbersome, this proof of concept utilizes the high level programming language \emph{expl3} provided by the package \emph{expl3-generic}. \cite{cstug-expl3} Expl3 has been developed primarily for \LaTeX{}3, an upcoming major version of \LaTeX{}, but it is usable with plain \TeX{} as well. It will be showcased directly in the code of the proof of concept in Section 3.1.
 
 \section{The Markdown package for \TeX{}}
 The \emph{Markdown}~\cite{cstug-markdown} \TeX{} package was named after Markdown, a lightweight markup language, which was first released in 2004 and designed with the primary goal of being easy to read and write. This has eventually caused wide adoption of the language on the Internet. The package provides a way to embed blocks of text written in the Markdown language directly into \TeX{} documents, resulting in another layer of abstraction. During typesetting, these blocks are parsed and eventually expanded into native \TeX{} macros correspoding to the Markdown input. 
@@ -279,7 +275,7 @@ Because the Markdown package offers first-class support for plain \TeX{} and alr
 Regarding usage, the main intended way to use the Markdown package is either through the macro \macro{markdownInput}, which is analogous to the \macro{input} primitive of \TeX{} and takes a filename as an argument; or the pair of macros \macro{markdownBegin} and \macro{markdownEnd}, which surround a block of Markdown-formatted text directly embedded into the document source. (Alternatively, the \LaTeX{} layer for the Markdown package provides an environment named \texttt{markdown} with the same purpose. Furthermore, the Con\TeX{}t layer provides \macro{startmarkdown} and \macro{stopmarkdown}.) Since we are mainly interested in the underlying macros that concern the individual Markdown element types, the thesis will not mention these macros further.
 
 \subsection{Lunamark writer -- a previously explored approach}
-Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which was coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark is capable of fast conversion of Markdown, its only input format, into other commonly used markup formats. Since the Lua\TeX{} engine is able to directly execute Lua code, Lunamark's parser was suitable for its use in the Markdown package.
+Markdown's parser originates from a Lua library called \emph{Lunamark}~\cite{lunamark}, which was coincidentally also developed by John MacFarlane, the author of Pandoc. Lunamark is capable of fast conversion of Markdown, its only input format, into other commonly used markup formats. Since the Lua\TeX{} engine is able to directly execute Lua code, \cite{luatex} Lunamark's parser was suitable for its use in the Markdown package.
 
 Here it should be noted that the original goal of the thesis was to integrate the support for Pandoc directly into the Markdown package. This would be done by extending Lunamark with a reader module for Pandoc's AST (specifically the \texttt{json} format) and this support would then be transferred to the Markdown package. A prototype of this reader was actually written\footnote{\url{https://github.com/drehak/lunamark}}, before and my supervisor discovered that Pandoc supports external writers.
 
@@ -408,7 +404,7 @@ Finally, there is a group of elements without any corresponding macros in the Ma
     \end{compactenum}
   \end{multicols}
   \vspace*{-1em}
-  \caption{Complete list of elements of Pandoc's AST (as of Pandoc~2.14.2)}
+  \caption{A complete list of elements of Pandoc's AST (as of Pandoc~2.14.2)}
   \label{fig:pandoc-elems}
 \end{figure}
 
@@ -522,11 +518,11 @@ Finally, there is a group of elements without any corresponding macros in the Ma
   \end{multicols}
   \vspace*{-1em}
   \caption{A complete list of output macros of the Markdown package (as of Markdown~2.11.0)}
-  \label{fig:markdown-renderers}
+  \label{fig:markdown-macros}
 \end{figure}
 
 \chapter{Implementation}
-In this chapter, I will describe how the proof of concept for the generic \TeX{} writer for Pandoc was implemented. Additionally, I will demonstrate the usage of the writer on a set of example documents.
+In this chapter, I will describe in detail how the proof of concept for the generic \TeX{} writer for Pandoc was implemented.
 
 \section{\TeX{} writer for Pandoc and the macros it outputs}
 A custom Pandoc writer consists of a single file written in Lua. The Pandoc documentation provides a sample custom writer for HTML and recommends using this writer as a basis for other custom writers, which is what I did. I will refer to this modified file as \file{p2md.lua}, which is also its name in the proof of concept.
@@ -541,7 +537,11 @@ I have reordered the functions in \file{p2md.lua} so that they appear in the sam
 
 \subsection{Inline elements}
 
-The first inline element is \texttt{Str}, which simply defines a string without spaces. A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}. To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters (e.g. \renderer{Backslash}), the occurences of these characters will be replaced with their respective macros.\footnote{It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \pandoc{Backslash\{\}}.} This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings -- for HTML, of course. We simply modify that one.
+The first inline element is \texttt{Str}, which simply defines a string without spaces.
+\ifexamples
+A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}.
+\fi
+To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters (e.g. \renderer{Backslash}), the occurences of these characters will be replaced with their respective macros.\footnote{It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \pandoc{Backslash\{\}}.} This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings -- for HTML, of course. We simply modify that one.
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -762,7 +762,7 @@ In the case of our \TeX{} writer, it is sensible to directly typeset raw element
 
 Here, expl3 syntax appears in \file{p2md.tex}. Expl3 redefines how some characters are processed. For example, underscores and colons are valid characters inside identifiers of expl3 functions. The significance of whitespace is also reduced. Because of this, all expl3 code has to be surrounded by \macro{ExplSyntaxOn} and \macro{ExplSyntaxOff}.
 
-As for \macro{tl\_if\_eq:nnT}, it is a variant of the macro \macro{tl\_if\_eq:nnTF}, which takes four parameters and returns the third, if the first two are equal; or the fourth, if they are not. \macro{tl\_if\_eq:nnT} is a variant that completely omits the ``false'' branch and outputs nothing if the elements are not equal, so it only takes three parameters. I have used the indentation style recommended by the expl3 manual\todo{cite}, so snippets using expl3 syntax will be broken into multiple lines.
+As for \macro{tl\_if\_eq:nnT}, it is a variant of the macro \macro{tl\_if\_eq:nnTF}, which takes four parameters and returns the third, if the first two are equal; or the fourth, if they are not. \macro{tl\_if\_eq:nnT} is a variant that completely omits the ``false'' branch and outputs nothing if the elements are not equal, so it only takes three parameters. I have used the indentation style recommended by the expl3 manual \cite{l3-expl3}, so snippets using expl3 syntax will be broken into multiple lines.
 
 \noindent
 \lstset{language=[plain]TeX}
@@ -1052,7 +1052,7 @@ Inside \file{p2md.tex}:
 \end{lstlisting}
 
 \noindent
-For document headings, the Markdown package has six macros, \renderer{HeadingOne} to \renderer{HeadingSix}. Design-wise, this might make sense as a mapping to \LaTeX{} macros like \macro{chapter}, \macro{section}, \macro{subsection} etc. However, the corresponding Pandoc element simply passes the heading level as an integer.
+For headings, the Markdown package has six macros, \renderer{HeadingOne} to \renderer{HeadingSix}. Design-wise, this might make sense as a mapping to \LaTeX{} macros like \macro{chapter}, \macro{section}, \macro{subsection} etc. However, the corresponding Pandoc element simply passes the heading level as an integer.
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -1198,8 +1198,8 @@ local meta = PANDOC_DOCUMENT.meta
 \end{lstlisting}
 
 \newpage
-\section{\LaTeX{} macropackage surrounding the writer}
-To provide an interface through which users can actually use the proof of concept, we will create a \LaTeX{} package on top of \file{p2md.tex}. The availibility of \LaTeX{} constructs and packages will also allow us to properly define macros for some elements such as \texttt{Underline}, \texttt{Superscript} or \texttt{Note}, which so far have only passed their parameters forward.
+\section{\LaTeX{} package surrounding the writer}
+To provide an interface through which users can actually use the proof of concept, we will create a \LaTeX{} package on top of \file{p2md.tex}. \cite{companion} The availibility of \LaTeX{} constructs and packages will also allow us to properly define macros for some elements such as \texttt{Underline}, \texttt{Superscript} or \texttt{Note}, which so far have only passed their parameters forward.
 
 The file extension for \LaTeX{} packages is \texttt{.sty}, hence the filename \file{p2md.sty}.
 Each \LaTeX{} package must first specify the \TeX{} format it requires (in this case \LaTeX{}2e) ad its name. Optionally, it can also specify its release date and provide a short description.
@@ -1221,7 +1221,7 @@ Because the package requires macros from the Markdown package to run correctly, 
 \end{lstlisting}
 
 \noindent
-Next, the package uses the macro \macro{input}, which expands to everything inside \file{p2md.tex}, essentially defining the macros within that file.
+Next, the package uses the macro \macro{input}, which expands to everything inside \file{p2md.tex}. That essentially results in the definition of macros within that file.
 
 \noindent
 \lstset{language=[LaTeX]TeX}
@@ -1339,7 +1339,7 @@ Loading the package \texttt{shellesc} will ensure that access to the system shel
 \noindent
 Note that because shell access to the system is a significant security risk, it still needs to be enabled when running the \TeX{} engine.
 
-And, finally, we define the command \macro{pandocInput} itself. Commands are defined via the command \macro{newcommand}, which has the same structure as aforementioned \macro{renewcommand}. To declare the first parameter as optional, two pairs of square brackets can be used, with the first one containing the total number of parameters and the second one containing the default value for the optional parameter. Thus, the following line will start the definition of a command named \macro{pandocInput}, which takes two parameters, the first one being optional with no default value:
+And, finally, we define the command \macro{pandocInput} itself. Commands are defined via the command \macro{newcommand}, which has the same structure as aforementioned \macro{renewcommand}. To declare the first parameter as optional, two pairs of square brackets can be used, with the first one containing the total number of parameters and the second one containing the default value for the optional parameter. Thus, the following line will start the definition of a command with the name \macro{pandocInput}, which takes two parameters, the first one being optional with no default value:
 
 \noindent
 \lstset{language=[LaTeX]TeX}
@@ -1377,7 +1377,7 @@ Note that using this macro effectively makes the use of Lua\TeX{} a requirement 
 \end{lstlisting}
 
 \noindent
-In a similar way to \macro{directlua}, the pair of macros \macro{immediate}\macro{write18} is used to run a shell command given by the parameter.
+In a similar way to \macro{directlua}, the primitives \macro{immediate}\macro{write18} are used to run a shell command given by the parameter.
 
 This particular command will run Pandoc with a set of options (see Section 2.1.1) which will make Pandoc read the input file given by the second parameter of \macro{pandocInput}, convert its contents from the format given by \macro{pandocFormat} to the format defined in the file \file{p2md.lua}, and outputs the result into \macro{jobname.pandoc.tex} -- for example, if the input file of \TeX{} is called \texttt{book.tex}, Pandoc puts its output into \texttt{book.pandoc.tex}.
 The option \texttt{-M} also sets the metadata key \texttt{auxDir} to the value of \macro{pandocAuxDir}, which is then passed to the custom writer (see end of Section 3.1.3).
@@ -1473,7 +1473,7 @@ Finally, Chapter 4 showcased the practical use of the proof of concept on a set 
 Some core developers of Pandoc have already expressed prior interest in a plain \TeX{} writer\footnote{\url{https://github.com/jgm/pandoc/issues/1541}} or positive reactions towards the proof of concept\footnote{For example in this thread: \url{https://groups.google.com/g/pandoc-discuss/c/W378Guwz-WA/m/-qaBzU6tAwAJ}}. Given enough time and work, that the showcased proof of concept \TeX{} might eventually mature into a writer worthy of being included in the core distribution of Pandoc. However, there are still many obstacles that would need to be overcome on the way there. In this section, I will try to outline a few of them.
 
 \subsection{Form of the output macros}
-Many of the \macro{pandoc...} macros showcased in Chapter 3 were structured after their corresponding \renderer{...} macros instead of the custom writer functions they are related to. This was done mainly because of the difficulty of programming in \TeX{} as compared to Lua. It will be necessary possible to gradually alter the form of the \macro{pandoc...} macros so that their parameters eventually match the parameters of their corresponding custom writer functions. This will require a lot of the transformation logic to be moved from Lua to \TeX{}, which the extensive expl3 interface might make relatively painless.
+Many of the \macro{pandoc...} macros showcased in Chapter 3 were structured after their corresponding \renderer{...} macros instead of the custom writer functions they are related to. This was done mainly because of the difficulty of programming in \TeX{} as compared to Lua. It will be necessary possible to gradually alter the form of the \macro{pandoc...} macros so that their parameters eventually match the parameters of their corresponding custom writer functions. This will require a lot of the transformation logic to be moved from Lua to \TeX{}, which the extensive expl3 interfaces \cite{l3-interfaces} might make relatively painless.
 
 \subsection{Independence from the Markdown package}
 The logical next step is to completely remove any dependence of the writer on the Markdown package and reimplement all elements in plain \TeX{}, as well as the \LaTeX{} and Con\TeX{}t layers on top. This might be possible just by looking into what the macros in Markdown expand into.
@@ -1483,8 +1483,8 @@ As for the elements without equivalents in Markdown for which their current macr
 \subsection{Plain \TeX{} and Con\TeX{}t interfaces}
 A quick way to use the proof of concept utilizing a \LaTeX{} package was implemented and demonstrated in this thesis. However, to become a truly generic writer, an interface for plain \TeX{} will have to be developed too. As for other formats like Con\TeX{}t, I believe that the plain \TeX{} interface will be fairly usable in Con\TeX{}t, but it is possible that Con\TeX{}t will offer better, more suitable constructions for the interface.
 
-\subsection{Overall robustness}
-Reworking some parts of the proof of concept, especially the \LaTeX{} macropackage, would benefit the usability of the package as a whole.
+\subsection{Error handling}
+Rewriting a minor parts of the proof of concept, especially in the \LaTeX{} package, in a more robust way would improve the usability of the package in the case that something goes wrong during typesetting.
 
 One example is the line of code in \file{p2md.sty} responsible for running Pandoc. If the command fails, for example because the input file is not available or because its structure is invalid, no output file is produced. This is not communicated to \TeX{} in any way and when \macro{input} called with the output file finally fails, the user is met with a rather cryptic message:
 
@@ -1501,7 +1501,7 @@ Some error handling mechanism will have to be developed to handle the case in wh
 \subsection{Handling of deprecation of classic custom writers}
 There are currently two styles of defining custom writers for Pandoc, to which the Pandoc documentation refers to as ``classic'' and ``new''. The main difference between them is that the classic style writer defines its rendering functions on the top level, while in the new style, everything is processed through a top-level function named \texttt{Writer} which contains all the custom writer logic.
 
-For the generic \TeX{} writer, I have decided to go with the classic style. There were multiple reasons for this, the main one being that the classic style is what Pandoc's documentation covers. Another reason is that support for the new style was only introduced in Pandoc 2.18\footnote{The Pandoc documentation actually states that the new style of custom writers was introduced in 2.17.2. This is wrong. No such version was even released, 2.17.1.1 was immediately followed by 2.18.}, which was released in January 2022. Repositories of several high-profile Linux distributions ship versions of Pandoc that are way older than that. For instance, Fedora 37 released in November 2022 provides only packages with Pandoc 2.14.0.3\footnote{\url{https://packages.fedoraproject.org/pkgs/pandoc/pandoc/fedora-37.html}}, which was released in June 2021. Another example is Ubuntu 22.04 LTS (codenamed ``Jammy Jellyfish''), which, despite being released in April 2022, still ships Pandoc 2.9.2.1\footnote{\url{https://packages.ubuntu.com/jammy/pandoc}} from March 2020.
+For the generic \TeX{} writer, I have decided to go with the classic style. There were multiple reasons for this, the main one being that the classic style is what Pandoc's documentation covers. Another reason is that support for the new style was only introduced in Pandoc 2.18\footnote{The Pandoc documentation actually states that the new style of custom writers was introduced in 2.17.2. This is wrong. No such version was even released, 2.17.1.1 was immediately followed by 2.18.}, which was released in January 2022. Repositories of several high-profile Linux distributions ship versions of Pandoc that are often months older than that. For instance, Fedora 37 released in November 2022 provides only packages with Pandoc 2.14.0.3\footnote{\url{https://packages.fedoraproject.org/pkgs/pandoc/pandoc/fedora-37.html}}, which was released in June 2021. Another example is Ubuntu 22.04 LTS (codenamed ``Jammy Jellyfish''), which, despite being released in April 2022, still ships Pandoc 2.9.2.1\footnote{\url{https://packages.ubuntu.com/jammy/pandoc}} from March 2020.
 
 Unbeknownst to me at the time of writing the proof of concept, classic custom writers were going to be deprecated. According to the discussion on the related pull request,\footnote{\url{https://github.com/jgm/pandoc/pull/8343}} it will still be possible to update a classic writer to a new-style one. However, other breaking changes might still be introduced. As long as the generic \TeX{} writer is an external one instead of being built into Pandoc itself, it will have to deal with this problem in the future versions of Pandoc.
 
@@ -1510,7 +1510,7 @@ Unbeknownst to me at the time of writing the proof of concept, classic custom wr
 \makeatletter\thesis@blocks@clear\makeatother
 
 \appendix %% Start the appendices.
-\chapter{An appendix}
-Here you can insert the appendices of your thesis.
+\chapter{Electronic attachments}
+The thesis archive contains \textbf{pandoc-to-markdown.zip}, an archive containing the complete source code of the proof of concept.
 
 \end{document}
