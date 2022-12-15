@@ -10,9 +10,6 @@
 % Enable todo notes in the margins.
 % \todotrue
 
-\newif\ifexamples
-% \examplestrue
-
 \documentclass[
   digital,     %% The `digital` option enables the default options for the
                %% digital version of a document. Replace with `printed`
@@ -62,11 +59,8 @@
       language Markdown into their documents, as well as change the styling of
       individual elements. Using macros from the Markdown package, the author
       produces a proof of concept for a generic \TeX{} writer for Pandoc, which
-      is also capable of producing output for any \TeX{} format based on plain
+      is capable of producing output for any \TeX{} format based on plain
       \TeX{}.
-      \ifexamples
-        Usage of the writer is then demonstrated on a set of example documents.
-      \fi
     },
     thanks      = {%
       I would like to thank my supervisor, RNDr. Vít Novotný, Ph.D., for his
@@ -156,13 +150,7 @@ Pandoc is a utility able to convert between numerous document formats, including
 
 The goal of this thesis is to integrate Pandoc with the Markdown package. Such an integration would allow users to supplement their \TeX{} documents with other documents or document snippets in formats such as HTML, DOCX or RTF. Moreover, since the Markdown package is capable of plain \TeX{} output, this would provide a way to obtain plain \TeX{} output from Pandoc.
 
-In Chapter 2, the author introduces Pandoc, \TeX{} and the Markdown package and outlines the proof of concept of the integration. Chapter 3 describes this proof of concept in greater
-\ifexamples
-  detail and Chapter 4 demonstrates its practical usage on a set of example documents. Chapter 5
-\else
-  detail. Chapter 4
-\fi
-concludes the thesis and outlines future work necessary for eventual inclusion of the writer from the proof of concept into Pandoc itself.
+In Chapter 2, the author introduces Pandoc, \TeX{} and the Markdown package and outlines the proof of concept of the integration. Chapter 3 describes this proof of concept in greater detail. Chapter 4 concludes the thesis and outlines future work necessary for eventual inclusion of the writer from the proof of concept into Pandoc itself.
 
 \chapter{State of the art}
 This chapter briefly introduces Pandoc and the relevant parts of its architecture. It also introduces the \TeX{} and \LaTeX{} typesetting systems and finally the Markdown package, which works with both of these systems and which will be utilized to quickly produce a simple proof of concept for the integration of Pandoc and Markdown.
@@ -537,11 +525,7 @@ I have reordered the functions in \file{p2md.lua} so that they appear in the sam
 
 \subsection{Inline elements}
 
-The first inline element is \texttt{Str}, which simply defines a string without spaces.
-\ifexamples
-A trivial example of this can be seen in figure \ref{fig:html-browsers-typeset}.
-\fi
-To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters (e.g. \renderer{Backslash}), the occurences of these characters will be replaced with their respective macros.\footnote{It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \pandoc{Backslash\{\}}.} This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings -- for HTML, of course. We simply modify that one.
+The first inline element is \texttt{Str}, which simply defines a string without spaces. To provide correct \TeX{} output, it will be necessary to escape characters that have a special role in \TeX{}. Since the Markdown package already provides macros for these characters (e.g. \renderer{Backslash}), the occurences of these characters will be replaced with their respective macros.\footnote{It is possible that letters will occur after the special characters, so braces are added after the macro name, e.g. \pandoc{Backslash\{\}}.} This does not affect the behavior of the macro, but it prevents the \TeX{} tokenizer from considering the letters as a part of the macro name.) The sample writer already provides an example function for escaping strings -- for HTML, of course. We simply modify that one.
 
 \noindent
 \lstset{language=[5.3]Lua}
@@ -1426,48 +1410,10 @@ In the case of a different format, the name of the format has to be specified in
 \pandocInput[format=docx]{example.docx}
 \end{lstlisting}
 
-\ifexamples
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\chapter{Example documents}
-\emph{Demonstrate specific example documents and the problems they posed while implementing the writer.} \label{fig:html-browsers-typeset}
-
-See Figure~\ref{fig:example-panda}.
-
-\begin{figure}[tbhp]
-\centering
-% https://tex.stackexchange.com/a/57420/70941
-\fbox{\includegraphics[width=\dimexpr(\textwidth-2\fboxrule-2\fboxsep), trim={4cm 18.1cm 4cm 4cm}, clip]{figures/markdown-panda}}
-\caption{An excerpt from the example Markdown document \texttt{panda.md} after it has been typeset using our proof of concept writer.}
-\label{fig:example-panda}
-\end{figure}
-
-% \includepdf[pages={1}]{pandoc-to-markdown/examples/html-browsers.pdf}
-
-% \begin{figure}[h]
-%    \centering
-%    \begin{tabular}{@{}c@{\hspace{.5cm}}c@{}}
-%      \includegraphics[
-%        width=0.6\textwidth,
-%        page=1,
-%        frame,
-%        trim=2cm 2cm 2cm 2cm
-%      ]{pandoc-to-markdown/examples/html-browsers.pdf}
-%    \end{tabular}
-%  \caption{Example page from an \textsc{HTML} document typeset with the proof of concept}
-%  \label{fig:html-browsers-typeset}
-% \end{figure}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\fi
-
 \chapter{Conclusion}
 This thesis demonstrated how the Pandoc utility can be integrated with the Markdown package, resulting in a generic \TeX{} writer that is capable of working with plain \TeX{} and offers ways to directly influence the output of Pandoc.
 
 After a quick introduction, Chapter 2 introduced Pandoc and described its typical usage. It also quickly introduced \TeX{} and the Markdown package, as well as quickly outlining the differences between the elements of Pandoc and Markdown. Chapter 3 then described how the proof of concept for the integration was assembled while showcasing the complete contents of the core files.
-\ifexamples
-Finally, Chapter 4 showcased the practical use of the proof of concept on a set of example documents.
-\fi
 
 \section{Future work}
 Some core developers of Pandoc have already expressed prior interest in a plain \TeX{} writer\footnote{\url{https://github.com/jgm/pandoc/issues/1541}} or positive reactions towards the proof of concept\footnote{For example in this thread: \url{https://groups.google.com/g/pandoc-discuss/c/W378Guwz-WA/m/-qaBzU6tAwAJ}}. Given enough time and work, that the showcased proof of concept \TeX{} might eventually mature into a writer worthy of being included in the core distribution of Pandoc. However, there are still many obstacles that would need to be overcome on the way there. In this section, I will try to outline a few of them.
